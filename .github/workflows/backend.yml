@@ -63,4 +63,4 @@ jobs:
         docker build -t ghcr.io/${ REPO_LOWER }/backend:${{ github.sha }} -f backend/Dockerfile ./backend
         docker tag ghcr.io/${ REPO_LOWER }/backend:${{ github.sha }} ghcr.io/${ REPO_LOWER }/backend:latest
         docker push ghcr.io/${ REPO_LOWER }/backend:${{ github.sha }}
-        docker push ghcr.io/${{ github.repository }}/backend:latest 
+        docker push ghcr.io/${ REPO_LOWER }/backend:latest 

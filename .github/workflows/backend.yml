@@ -60,7 +60,7 @@ jobs:
       run: |
         # Convert github.repository to lowercase for the image tags
         REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-        docker build -t ghcr.io/${ REPO_LOWER }/backend:${{ github.sha }} -f backend/Dockerfile ./backend
-        docker tag ghcr.io/${ REPO_LOWER }/backend:${{ github.sha }} ghcr.io/${ REPO_LOWER }/backend:latest
-        docker push ghcr.io/${ REPO_LOWER }/backend:${{ github.sha }}
-        docker push ghcr.io/${ REPO_LOWER }/backend:latest 
+        docker build -t ghcr.io/${REPO_LOWER}/backend:${{ github.sha }} -f backend/Dockerfile ./backend
+        docker tag ghcr.io/${REPO_LOWER}/backend:${{ github.sha }} ghcr.io/${ REPO_LOWER }/backend:latest
+        docker push ghcr.io/${REPO_LOWER}/backend:${{ github.sha }}
+        docker push ghcr.io/${REPO_LOWER}/backend:latest 

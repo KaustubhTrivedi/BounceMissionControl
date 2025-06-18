@@ -9,31 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as MissionsRouteImport } from './routes/missions'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as MarsRoverRouteImport } from './routes/mars-rover'
+import { Route as ApodRouteImport } from './routes/apod'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const MarsRoverRoute = MarsRoverRouteImport.update({
+  id: '/mars-rover',
+  path: '/mars-rover',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MissionsRoute = MissionsRouteImport.update({
-  id: '/missions',
-  path: '/missions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnalyticsRoute = AnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
+const ApodRoute = ApodRouteImport.update({
+  id: '/apod',
+  path: '/apod',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -50,86 +38,51 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/analytics': typeof AnalyticsRoute
-  '/dashboard': typeof DashboardRoute
-  '/missions': typeof MissionsRoute
-  '/settings': typeof SettingsRoute
+  '/apod': typeof ApodRoute
+  '/mars-rover': typeof MarsRoverRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/analytics': typeof AnalyticsRoute
-  '/dashboard': typeof DashboardRoute
-  '/missions': typeof MissionsRoute
-  '/settings': typeof SettingsRoute
+  '/apod': typeof ApodRoute
+  '/mars-rover': typeof MarsRoverRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/analytics': typeof AnalyticsRoute
-  '/dashboard': typeof DashboardRoute
-  '/missions': typeof MissionsRoute
-  '/settings': typeof SettingsRoute
+  '/apod': typeof ApodRoute
+  '/mars-rover': typeof MarsRoverRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/about'
-    | '/analytics'
-    | '/dashboard'
-    | '/missions'
-    | '/settings'
+  fullPaths: '/' | '/about' | '/apod' | '/mars-rover'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/analytics' | '/dashboard' | '/missions' | '/settings'
-  id:
-    | '__root__'
-    | '/'
-    | '/about'
-    | '/analytics'
-    | '/dashboard'
-    | '/missions'
-    | '/settings'
+  to: '/' | '/about' | '/apod' | '/mars-rover'
+  id: '__root__' | '/' | '/about' | '/apod' | '/mars-rover'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  AnalyticsRoute: typeof AnalyticsRoute
-  DashboardRoute: typeof DashboardRoute
-  MissionsRoute: typeof MissionsRoute
-  SettingsRoute: typeof SettingsRoute
+  ApodRoute: typeof ApodRoute
+  MarsRoverRoute: typeof MarsRoverRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
+    '/mars-rover': {
+      id: '/mars-rover'
+      path: '/mars-rover'
+      fullPath: '/mars-rover'
+      preLoaderRoute: typeof MarsRoverRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/missions': {
-      id: '/missions'
-      path: '/missions'
-      fullPath: '/missions'
-      preLoaderRoute: typeof MissionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analytics': {
-      id: '/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsRouteImport
+    '/apod': {
+      id: '/apod'
+      path: '/apod'
+      fullPath: '/apod'
+      preLoaderRoute: typeof ApodRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -152,10 +105,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  AnalyticsRoute: AnalyticsRoute,
-  DashboardRoute: DashboardRoute,
-  MissionsRoute: MissionsRoute,
-  SettingsRoute: SettingsRoute,
+  ApodRoute: ApodRoute,
+  MarsRoverRoute: MarsRoverRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

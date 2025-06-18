@@ -18,7 +18,7 @@ function RootComponent() {
                 className="flex items-center space-x-2 text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
               >
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">B</span>
+                  <span className="text-white font-bold text-sm">🚀</span>
                 </div>
                 <span>Bounce Mission Control</span>
               </Link>
@@ -26,32 +26,18 @@ function RootComponent() {
             
             <div className="flex items-center space-x-8">
               <Link 
-                to="/dashboard" 
+                to="/apod" 
                 className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 activeProps={{ className: "text-blue-600 hover:text-blue-700 px-3 py-2 rounded-md text-sm font-medium" }}
               >
-                Dashboard
+                Astronomy Picture
               </Link>
               <Link 
-                to="/missions" 
+                to="/mars-rover" 
                 className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 activeProps={{ className: "text-blue-600 hover:text-blue-700 px-3 py-2 rounded-md text-sm font-medium" }}
               >
-                Missions
-              </Link>
-              <Link 
-                to="/analytics" 
-                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                activeProps={{ className: "text-blue-600 hover:text-blue-700 px-3 py-2 rounded-md text-sm font-medium" }}
-              >
-                Analytics
-              </Link>
-              <Link 
-                to="/settings" 
-                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                activeProps={{ className: "text-blue-600 hover:text-blue-700 px-3 py-2 rounded-md text-sm font-medium" }}
-              >
-                Settings
+                Mars Rover Photos
               </Link>
               <Link 
                 to="/about" 

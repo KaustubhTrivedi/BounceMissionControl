@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 
 export const Route = createFileRoute('/apod')({
   component: APOD,

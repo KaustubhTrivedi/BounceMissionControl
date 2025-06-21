@@ -26,7 +26,8 @@
     # Copy built files from builder
     COPY --from=builder /app/dist ./dist
     
-    # If you need to copy other files (like config), add here
+    # Copy config files (JavaScript files not copied by TypeScript build)
+    COPY --from=builder /app/src/config ./dist/config
     
     # Set environment variables if needed
     ENV NODE_ENV=production

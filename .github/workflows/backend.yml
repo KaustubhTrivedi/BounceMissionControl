@@ -60,7 +60,25 @@ jobs:
       run: |
         # Convert github.repository to lowercase for the image tags
         REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-        docker build -t ghcr.io/${REPO_LOWER}/backend:${{ github.sha }} -f backend/Dockerfile ./backend
-        docker tag ghcr.io/${REPO_LOWER}/backend:${{ github.sha }} ghcr.io/${REPO_LOWER}/backend:latest
-        docker push ghcr.io/${REPO_LOWER}/backend:${{ github.sha }}
+        
+        # Extract version from package.json
+        VERSION=$(cat backend/package.json | grep '"version"' | cut -d'"' -f4)
+        VERSION_TAG="v${VERSION}"
+        
+        # Build with multiple tags: latest, version, and version+sha for uniqueness
+        docker build -t ghcr.io/${REPO_LOWER}/backend:latest \
+                     -t ghcr.io/${REPO_LOWER}/backend:${VERSION_TAG} \
+                     -t ghcr.io/${REPO_LOWER}/backend:${VERSION_TAG}-$(echo ${{ github.sha }} | cut -c1-7) \
+                     -f backend/Dockerfile ./backend
+        
+        # Push all tags
         docker push ghcr.io/${REPO_LOWER}/backend:latest
+        docker push ghcr.io/${REPO_LOWER}/backend:${VERSION_TAG}
+        docker push ghcr.io/${REPO_LOWER}/backend:${VERSION_TAG}-$(echo ${{ github.sha }} | cut -c1-7)
+        
+        # Output the version for reference
+        echo "Built and pushed version: ${VERSION_TAG} (from package.json v${VERSION})"
+        echo "Available tags:"
+        echo "  - latest"
+        echo "  - ${VERSION_TAG}" 
+        echo "  - ${VERSION_TAG}-$(echo ${{ github.sha }} | cut -c1-7)"

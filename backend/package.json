@@ -6,7 +6,7 @@
     "start": "ts-node src/app.ts",
     "dev:watch": "nodemon src/app.ts",
     "build": "tsc",
-    "prepare": "husky install",
+    "prepare": "husky install || exit 0",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",

@@ -23,6 +23,13 @@ function APOD() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [isDateChanging, setIsDateChanging] = useState(false)
 
+  // Helper function to normalize date to midnight
+  const normalizeDate = (date: Date): Date => {
+    const normalized = new Date(date)
+    normalized.setHours(0, 0, 0, 0)
+    return normalized
+  }
+
   // Helper function to format date in local timezone (YYYY-MM-DD)
   const formatDateForAPI = (date: Date): string => {
     const year = date.getFullYear()
@@ -108,8 +115,8 @@ function APOD() {
     )
   }
 
-  const apodStartDate = new Date('1995-06-16') // APOD started on June 16, 1995
-  const today = new Date()
+  const apodStartDate = new Date('1995-06-16') // Already normalized
+  const today = normalizeDate(new Date()) // Normalize current date
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">

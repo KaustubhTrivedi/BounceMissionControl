@@ -33,8 +33,8 @@ function MarsRover() {
     
     try {
       const url = solNumber 
-        ? `http://localhost:3001/api/mars-photos?sol=${solNumber}`
-        : 'http://localhost:3001/api/mars-photos'
+        ? `http://localhost:3000/api/mars-photos?sol=${solNumber}`
+        : 'http://localhost:3000/api/mars-photos'
       
       const response = await fetch(url)
       

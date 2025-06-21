@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { DatePicker } from '@/components/ui/date-picker'
 
 export const Route = createFileRoute('/apod')({
   component: APOD,
@@ -18,16 +20,32 @@ function APOD() {
   const [apodData, setApodData] = useState<APODData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedDate, setSelectedDate] = useState<string>('')
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [isDateChanging, setIsDateChanging] = useState(false)
 
-  const fetchAPOD = async (date?: string) => {
+  // Helper function to normalize date to midnight
+  const normalizeDate = (date: Date): Date => {
+    const normalized = new Date(date)
+    normalized.setHours(0, 0, 0, 0)
+    return normalized
+  }
+
+  // Helper function to format date in local timezone (YYYY-MM-DD)
+  const formatDateForAPI = (date: Date): string => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const fetchAPOD = async (date?: Date) => {
     setLoading(true)
     setError(null)
     
     try {
-      const url = date 
-        ? `http://localhost:3000/api/apod?date=${date}`
+      const dateString = date ? formatDateForAPI(date) : undefined
+      const url = dateString 
+        ? `http://localhost:3000/api/apod?date=${dateString}`
         : 'http://localhost:3000/api/apod'
       
       const response = await fetch(url)
@@ -49,27 +67,17 @@ function APOD() {
     fetchAPOD()
   }, [])
 
-  const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    event.preventDefault() // Prevent any default form behavior
-    const date = event.target.value
+  const handleDateChange = (date: Date | undefined) => {
     setSelectedDate(date)
     
-    // Immediately fetch on date change (no debouncing for better UX)
     if (date) {
       setIsDateChanging(true)
       fetchAPOD(date).finally(() => setIsDateChanging(false))
     }
   }
 
-  const handleDateSubmit = (event: React.FormEvent) => {
-    event.preventDefault() // Prevent form submission
-    if (selectedDate) {
-      fetchAPOD(selectedDate)
-    }
-  }
-
   const resetToToday = () => {
-    setSelectedDate('')
+    setSelectedDate(undefined)
     setIsDateChanging(false)
     fetchAPOD()
   }
@@ -96,16 +104,19 @@ function APOD() {
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading APOD</h3>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button 
-            onClick={() => fetchAPOD(selectedDate || undefined)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          <Button 
+            onClick={() => fetchAPOD(selectedDate)}
+            className="bg-blue-600 text-white hover:bg-blue-700"
           >
             Try Again
-          </button>
+          </Button>
         </div>
       </div>
     )
   }
+
+  const apodStartDate = new Date('1995-06-16') // Already normalized
+  const today = normalizeDate(new Date()) // Normalize current date
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -122,44 +133,31 @@ function APOD() {
 
         {/* Date Picker */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <form onSubmit={handleDateSubmit} className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <label htmlFor="date-picker" className="text-sm font-medium text-gray-700">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <label className="text-sm font-medium text-gray-700">
               Select a date:
             </label>
             <div className="flex items-center gap-2">
-              <input
-                id="date-picker"
-                type="date"
-                value={selectedDate}
-                onChange={handleDateChange}
-                min="1995-06-16" // APOD started on June 16, 1995
-                max={new Date().toISOString().split('T')[0]}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                onClick={(e) => e.stopPropagation()} // Prevent event bubbling
+              <DatePicker
+                date={selectedDate}
+                onDateChange={handleDateChange}
+                placeholder="Pick a date for APOD"
+                minDate={apodStartDate}
+                maxDate={today}
                 disabled={loading}
               />
               {isDateChanging && (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
               )}
-              {selectedDate && !isDateChanging && (
-                <button
-                  type="submit"
-                  className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
-                  title="Load selected date"
-                  disabled={loading}
-                >
-                  Go
-                </button>
-              )}
             </div>
-            <button
-              type="button"
+            <Button
               onClick={resetToToday}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+              variant="default"
+              disabled={loading}
             >
               Today's APOD
-            </button>
-          </form>
+            </Button>
+          </div>
         </div>
 
         {/* APOD Content */}
@@ -192,14 +190,20 @@ function APOD() {
                   />
                   {apodData.hdurl && (
                     <div className="absolute top-4 right-4">
-                      <a
-                        href={apodData.hdurl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-black bg-opacity-70 text-white px-3 py-1 rounded-md text-sm hover:bg-opacity-90 transition-opacity"
+                      <Button
+                        asChild
+                        variant="secondary"
+                        size="sm"
+                        className="bg-black bg-opacity-70 text-white hover:bg-opacity-90"
                       >
-                        HD Version
-                      </a>
+                        <a
+                          href={apodData.hdurl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          HD Version
+                        </a>
+                      </Button>
                     </div>
                   )}
                 </div>

@@ -87,7 +87,7 @@ function APOD() {
                 placeholder="Pick a date for APOD"
                 minDate={apodStartDate}
                 maxDate={today}
-                disabled={isLoading}
+                disabled={isLoading || isFetching}
               />
               {isFetching && (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
@@ -96,7 +96,7 @@ function APOD() {
             <Button
               onClick={resetToToday}
               variant="default"
-              disabled={isLoading}
+              disabled={isLoading || isFetching}
             >
               Today's APOD
             </Button>

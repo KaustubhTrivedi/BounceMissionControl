@@ -16,12 +16,16 @@ function MarsRover() {
   const [selectedPhoto, setSelectedPhoto] = useState<RoverPhoto | null>(null)
   
   // Use React Query hook for data fetching
+  const solNumber = sol ? parseInt(sol, 10) : undefined
+  const validSol = solNumber && !isNaN(solNumber) ? solNumber : undefined
+  
   const { 
     data: roverData, 
     isLoading, 
     error, 
-    refetch
-  } = useMarsRoverPhotos({ sol: sol ? parseInt(sol) : undefined })
+    refetch,
+    isFetching
+  } = useMarsRoverPhotos({ sol: validSol })
 
   // No need for manual fetch function with React Query
 
@@ -103,20 +107,23 @@ function MarsRover() {
                 onChange={(e) => setSol(e.target.value)}
                 placeholder="Enter sol number (e.g. 1000)"
                 min="0"
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                disabled={isLoading || isFetching}
+                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 type="submit"
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
+                disabled={isLoading || isFetching}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Search
+                {isFetching ? 'Searching...' : 'Search'}
               </button>
               <button
                 type="button"
                 onClick={resetToLatest}
-                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm"
+                disabled={isLoading || isFetching}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Latest Photos
+                {isFetching ? 'Loading...' : 'Latest Photos'}
               </button>
             </form>
           </div>

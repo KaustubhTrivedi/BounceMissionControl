@@ -18,12 +18,7 @@ export class ApiError extends Error {
   }
 }
 
-// API Response type
-export interface ApiResponse<T = any> {
-  data: T
-  status: number
-  statusText: string
-}
+// ApiResponse interface removed - not used in the current implementation
 
 // HTTP request options
 interface RequestOptions extends RequestInit {

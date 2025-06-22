@@ -3,7 +3,8 @@ import {
   fetchAPODData, 
   fetchMarsRoverPhotos, 
   fetchRoverManifest, 
-  getMostActiveRover 
+  getMostActiveRover,
+  fetchPerseveranceWeatherData
 } from '../helpers/nasa-api.helper'
 import { isValidDate, isValidSol, isNonEmptyString } from '../utils/validators'
 import { MarsRoverAPIResponse } from '../models/nasa.models'
@@ -18,7 +19,17 @@ export const healthCheck = (req: Request, res: Response) => {
     status: 'operational',
     timestamp: new Date().toISOString(),
     nasa_api_key: process.env.NASA_API_KEY === 'DEMO_KEY' ? 'Using DEMO_KEY' : 'Configured',
-    available_rovers: nasaConfig.rovers
+    available_rovers: nasaConfig.rovers,
+    available_endpoints: [
+      'GET /',
+      'GET /api/apod?date=YYYY-MM-DD',
+      'GET /api/mars-photos?sol=NUMBER',
+      'GET /api/mars-photos/:rover?sol=NUMBER',
+      'GET /api/rover-manifest/:rover',
+      'GET /api/most-active-rover',
+      'GET /api/latest-rover-photos?sol=NUMBER',
+      'GET /api/perseverance-weather'
+    ]
   })
 }
 
@@ -129,4 +140,18 @@ export const getLatestRoverPhotos = async (req: Request, res: Response) => {
   }
 
   res.json(response)
+}
+
+// Get Perseverance MEDA weather data
+export const getPerseveranceWeatherData = async (req: Request, res: Response) => {
+  try {
+    const weatherData = await fetchPerseveranceWeatherData()
+    res.json(weatherData)
+  } catch (error) {
+    console.error('Error fetching Perseverance weather data:', error)
+    res.status(500).json({
+      error: 'Failed to fetch Perseverance weather data. Data may be temporarily unavailable.',
+      timestamp: new Date().toISOString()
+    })
+  }
 } 

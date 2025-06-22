@@ -4,7 +4,8 @@ module.exports = {
   endpoints: {
     apod: '/planetary/apod',
     marsRover: '/mars-photos/api/v1/rovers', // Base endpoint for all rovers
-    marsRoverManifest: '/mars-photos/api/v1/manifests' // For rover info and latest sol
+    marsRoverManifest: '/mars-photos/api/v1/manifests', // For rover info and latest sol
+    perseveranceWeather: 'https://mars.nasa.gov/layout/embed/image/m20weather/' // Perseverance MEDA weather data
   },
   // Available Mars rovers
   rovers: ['curiosity', 'opportunity', 'spirit', 'perseverance'],

@@ -12,7 +12,7 @@ import {
   type RoverManifest, 
   type MostActiveRoverResponse,
   type RoverName,
-  AVAILABLE_ROVERS
+  type PerseveranceWeatherResponse
 } from '@/services/nasa'
 
 // Query Keys
@@ -130,33 +130,44 @@ export const useMostActiveRover = (
 }
 
 // Combined Hook: Get Most Active Rover + Its Latest Photos
-export const useMostActiveRoverWithPhotos = (
-  params: {
-    sol?: number
-    camera?: string
-    page?: number
-  } = {},
-  options?: Omit<UseQueryOptions<MarsRoverResponse>, 'queryKey' | 'queryFn'>
-) => {
-  // First get the most active rover
-  const { data: mostActiveRoverData, isLoading: isLoadingRover } = useMostActiveRover()
+export const useMostActiveRoverWithPhotos = (params: {
+  sol?: number
+  camera?: string
+  page?: number
+} = {}) => {
+  return useQuery({
+    queryKey: ['most-active-rover-photos', params],
+    queryFn: () => nasaApi.getLatestRoverPhotos(params),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  })
+}
+
+// Hook to get Perseverance MEDA weather data
+export const usePerseveranceWeather = () => {
+  return useQuery({
+    queryKey: ['perseverance-weather'],
+    queryFn: () => nasaApi.getPerseveranceWeather(),
+    staleTime: 30 * 60 * 1000, // 30 minutes - weather data doesn't change frequently
+    gcTime: 60 * 60 * 1000, // 1 hour
+    retry: 2, // Retry twice in case of temporary failures
+  })
+}
+
+// Hook to get the latest sol weather data from Perseverance
+export const useLatestPerseveranceWeather = () => {
+  const { data: weatherData, ...rest } = usePerseveranceWeather()
   
-  // Then get photos from that rover
-  const { data: photosData, isLoading: isLoadingPhotos, error } = useLatestMarsRoverPhotos(
-    params,
-    {
-      enabled: !!mostActiveRoverData?.most_active_rover,
-      ...options,
-    }
-  )
+  const latestSolData = weatherData?.sol_data
 
   return {
-    data: photosData,
-    isLoading: isLoadingRover || isLoadingPhotos,
-    error,
-    mostActiveRover: mostActiveRoverData?.most_active_rover,
+    data: latestSolData,
+    latestSol: weatherData?.latest_sol,
+    location: weatherData?.location,
+    timestamp: weatherData?.timestamp,
+    ...rest
   }
 }
 
 // Export available rovers for components
-export { AVAILABLE_ROVERS } 
+export const AVAILABLE_ROVERS = ['curiosity', 'opportunity', 'spirit', 'perseverance'] as const 

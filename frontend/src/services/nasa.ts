@@ -69,6 +69,52 @@ export interface MostActiveRoverResponse {
   timestamp: string
 }
 
+// Perseverance MEDA Weather Data Types
+export interface PerseveranceWeatherSensor {
+  average?: number | null
+  minimum?: number | null
+  maximum?: number | null
+  count?: number | null
+}
+
+export interface PerseveranceWindData {
+  speed?: PerseveranceWeatherSensor
+  direction?: {
+    compass_point?: string
+    degrees?: number
+  }
+}
+
+export interface PerseveranceSolWeatherData {
+  sol: number
+  terrestrial_date: string
+  temperature: {
+    air?: PerseveranceWeatherSensor
+    ground?: PerseveranceWeatherSensor
+  }
+  pressure?: PerseveranceWeatherSensor
+  wind?: PerseveranceWindData
+  humidity?: PerseveranceWeatherSensor
+  season?: string
+  sunrise?: string
+  sunset?: string
+  local_uv_irradiance_index?: string
+  atmosphere_opacity?: string
+}
+
+export interface PerseveranceWeatherResponse {
+  latest_sol: number
+  sol_data: PerseveranceSolWeatherData
+  location: {
+    name: string
+    coordinates: {
+      latitude: number
+      longitude: number
+    }
+  }
+  timestamp: string
+}
+
 // Available rovers
 export const AVAILABLE_ROVERS = ['curiosity', 'opportunity', 'spirit', 'perseverance'] as const
 export type RoverName = typeof AVAILABLE_ROVERS[number]
@@ -81,6 +127,7 @@ const endpoints = {
   roverManifest: (rover: string) => `/api/rover-manifest/${rover}`,
   mostActiveRover: '/api/most-active-rover',
   latestRoverPhotos: '/api/latest-rover-photos',
+  perseveranceWeather: '/api/perseverance-weather',
 }
 
 // NASA API Service Functions
@@ -130,6 +177,11 @@ export const nasaApi = {
     page?: number
   } = {}): Promise<MarsRoverResponse> => {
     return api.get<MarsRoverResponse>(endpoints.latestRoverPhotos, params)
+  },
+
+  // Get Perseverance MEDA weather data
+  getPerseveranceWeather: async (): Promise<PerseveranceWeatherResponse> => {
+    return api.get<PerseveranceWeatherResponse>(endpoints.perseveranceWeather)
   },
 }
 

@@ -3,7 +3,7 @@
  * Centralized service for making HTTP requests to the backend
  */
 
-import API_BASE_URL, { getApiUrl } from '@/config/api'
+import { getApiUrl } from '@/config/api'
 
 // Custom error class for API errors
 export class ApiError extends Error {

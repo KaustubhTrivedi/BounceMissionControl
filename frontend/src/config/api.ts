@@ -3,15 +3,10 @@
  * Centralized configuration for backend API endpoints
  */
 
-// Get environment variables with fallbacks
-const getEnvVar = (key: string, fallback: string): string => {
-  return import.meta.env[key] || fallback
-}
-
 // API configuration for both development and production
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
   (import.meta.env.MODE === 'production' 
-    ? 'https://your-render-app-name.onrender.com' // Replace with your actual Render URL
+    ? 'https://bouncemissioncontrol.onrender.com' // Replace with your actual Render URL
     : 'http://localhost:3001');
 
 export default API_BASE_URL;

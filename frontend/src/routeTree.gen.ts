@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as MarsWeatherRouteImport } from './routes/mars-weather'
 import { Route as MarsRoverRouteImport } from './routes/mars-rover'
 import { Route as ApodRouteImport } from './routes/apod'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
+const MarsWeatherRoute = MarsWeatherRouteImport.update({
+  id: '/mars-weather',
+  path: '/mars-weather',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MarsRoverRoute = MarsRoverRouteImport.update({
   id: '/mars-rover',
   path: '/mars-rover',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/apod': typeof ApodRoute
   '/mars-rover': typeof MarsRoverRoute
+  '/mars-weather': typeof MarsWeatherRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apod': typeof ApodRoute
   '/mars-rover': typeof MarsRoverRoute
+  '/mars-weather': typeof MarsWeatherRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/apod': typeof ApodRoute
   '/mars-rover': typeof MarsRoverRoute
+  '/mars-weather': typeof MarsWeatherRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/apod' | '/mars-rover'
+  fullPaths: '/' | '/about' | '/apod' | '/mars-rover' | '/mars-weather'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/apod' | '/mars-rover'
-  id: '__root__' | '/' | '/about' | '/apod' | '/mars-rover'
+  to: '/' | '/about' | '/apod' | '/mars-rover' | '/mars-weather'
+  id: '__root__' | '/' | '/about' | '/apod' | '/mars-rover' | '/mars-weather'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,10 +76,18 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   ApodRoute: typeof ApodRoute
   MarsRoverRoute: typeof MarsRoverRoute
+  MarsWeatherRoute: typeof MarsWeatherRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/mars-weather': {
+      id: '/mars-weather'
+      path: '/mars-weather'
+      fullPath: '/mars-weather'
+      preLoaderRoute: typeof MarsWeatherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mars-rover': {
       id: '/mars-rover'
       path: '/mars-rover'
@@ -107,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   ApodRoute: ApodRoute,
   MarsRoverRoute: MarsRoverRoute,
+  MarsWeatherRoute: MarsWeatherRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

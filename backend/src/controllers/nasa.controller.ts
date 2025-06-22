@@ -4,7 +4,8 @@ import {
   fetchMarsRoverPhotos, 
   fetchRoverManifest, 
   getMostActiveRover,
-  fetchPerseveranceWeatherData
+  fetchPerseveranceWeatherData,
+  getMultiPlanetaryDashboard
 } from '../helpers/nasa-api.helper'
 import { isValidDate, isValidSol, isNonEmptyString } from '../utils/validators'
 import { MarsRoverAPIResponse } from '../models/nasa.models'
@@ -28,7 +29,8 @@ export const healthCheck = (req: Request, res: Response) => {
       'GET /api/rover-manifest/:rover',
       'GET /api/most-active-rover',
       'GET /api/latest-rover-photos?sol=NUMBER',
-      'GET /api/perseverance-weather'
+      'GET /api/perseverance-weather',
+      'GET /api/multi-planetary-dashboard'
     ]
   })
 }
@@ -75,17 +77,29 @@ export const getMarsRoverPhotos = async (req: Request, res: Response) => {
   }
 
   const selectedRover = rover || 'curiosity'
-  const roverData = await fetchMarsRoverPhotos(selectedRover, sol as string)
   
-  // Format response with metadata
-  const response: MarsRoverAPIResponse = {
-    photos: roverData.photos,
-    total_photos: roverData.photos.length,
-    rover: roverData.photos[0]?.rover || null,
-    sol: (typeof sol === 'string') ? sol : 'latest'
-  }
+  try {
+    const roverData = await fetchMarsRoverPhotos(selectedRover, sol as string)
+    
+    // Ensure photos array exists and is valid
+    const photos = roverData?.photos || []
+    
+    // Format response with metadata
+    const response: MarsRoverAPIResponse = {
+      photos: photos,
+      total_photos: photos.length,
+      rover: photos[0]?.rover || null,
+      sol: (typeof sol === 'string') ? sol : 'latest'
+    }
 
-  res.json(response)
+    res.json(response)
+  } catch (error) {
+    console.error(`Error fetching Mars rover photos for ${selectedRover}:`, error)
+    res.status(500).json({
+      error: `Failed to fetch Mars rover photos for ${selectedRover}. The rover may be inactive or data temporarily unavailable.`,
+      timestamp: new Date().toISOString()
+    })
+  }
 }
 
 // Get rover manifest (mission info and latest sol)
@@ -127,19 +141,30 @@ export const getLatestRoverPhotos = async (req: Request, res: Response) => {
     }
   }
 
-  const mostActiveRover = await getMostActiveRover()
-  const roverData = await fetchMarsRoverPhotos(mostActiveRover, sol as string)
-  
-  // Format response with metadata
-  const response: MarsRoverAPIResponse = {
-    photos: roverData.photos,
-    total_photos: roverData.photos.length,
-    rover: roverData.photos[0]?.rover || null,
-    sol: (typeof sol === 'string') ? sol : 'latest',
-    selected_rover: mostActiveRover
-  }
+  try {
+    const mostActiveRover = await getMostActiveRover()
+    const roverData = await fetchMarsRoverPhotos(mostActiveRover, sol as string)
+    
+    // Ensure photos array exists and is valid
+    const photos = roverData?.photos || []
+    
+    // Format response with metadata
+    const response: MarsRoverAPIResponse = {
+      photos: photos,
+      total_photos: photos.length,
+      rover: photos[0]?.rover || null,
+      sol: (typeof sol === 'string') ? sol : 'latest',
+      selected_rover: mostActiveRover
+    }
 
-  res.json(response)
+    res.json(response)
+  } catch (error) {
+    console.error('Error fetching latest rover photos:', error)
+    res.status(500).json({
+      error: 'Failed to fetch latest rover photos. Data may be temporarily unavailable.',
+      timestamp: new Date().toISOString()
+    })
+  }
 }
 
 // Get Perseverance MEDA weather data
@@ -151,6 +176,20 @@ export const getPerseveranceWeatherData = async (req: Request, res: Response) =>
     console.error('Error fetching Perseverance weather data:', error)
     res.status(500).json({
       error: 'Failed to fetch Perseverance weather data. Data may be temporarily unavailable.',
+      timestamp: new Date().toISOString()
+    })
+  }
+}
+
+// Get multi-planetary dashboard data
+export const getMultiPlanetaryDashboardData = async (req: Request, res: Response) => {
+  try {
+    const dashboardData = await getMultiPlanetaryDashboard()
+    res.json(dashboardData)
+  } catch (error) {
+    console.error('Error fetching multi-planetary dashboard data:', error)
+    res.status(500).json({
+      error: 'Failed to fetch multi-planetary dashboard data',
       timestamp: new Date().toISOString()
     })
   }

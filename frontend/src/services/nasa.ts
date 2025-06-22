@@ -4,7 +4,6 @@
  */
 
 import { api } from './api'
-import { endpoints } from '@/config/api'
 
 // APOD (Astronomy Picture of the Day) Types
 export interface APODData {
@@ -41,6 +40,12 @@ export interface MarsRoverPhoto {
 
 export interface MarsRoverResponse {
   photos: MarsRoverPhoto[]
+}
+
+// API endpoints
+const endpoints = {
+  apod: '/api/nasa/apod',
+  marsPhotos: '/api/nasa/mars-rover/photos',
 }
 
 // NASA API Service Functions

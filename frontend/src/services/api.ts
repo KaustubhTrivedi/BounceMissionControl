@@ -3,7 +3,7 @@
  * Centralized service for making HTTP requests to the backend
  */
 
-import { apiConfig, buildApiUrl } from '@/config/api'
+import API_BASE_URL, { getApiUrl } from '@/config/api'
 
 // Custom error class for API errors
 export class ApiError extends Error {
@@ -25,13 +25,37 @@ interface RequestOptions extends RequestInit {
   timeout?: number
 }
 
+// Default configuration
+const defaultConfig = {
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+}
+
+// Helper function to build URL with query parameters
+function buildUrl(endpoint: string, params?: Record<string, any>): string {
+  const fullUrl = getApiUrl(endpoint)
+  
+  if (!params) return fullUrl
+  
+  const url = new URL(fullUrl)
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      url.searchParams.append(key, String(value))
+    }
+  })
+  
+  return url.toString()
+}
+
 // Generic request function
 async function request<T = any>(
-  url: string,
+  endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
   const {
-    timeout = apiConfig.timeout,
+    timeout = defaultConfig.timeout,
     headers = {},
     ...fetchOptions
   } = options
@@ -40,11 +64,13 @@ async function request<T = any>(
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeout)
 
+  const url = endpoint.startsWith('http') ? endpoint : getApiUrl(endpoint)
+
   try {
     const response = await fetch(url, {
       ...fetchOptions,
       headers: {
-        ...apiConfig.headers,
+        ...defaultConfig.headers,
         ...headers,
       },
       signal: controller.signal,
@@ -90,37 +116,37 @@ async function request<T = any>(
 
 // HTTP methods
 export const api = {
-  get: <T = any>(url: string, params?: Record<string, any>, options?: RequestOptions): Promise<T> => {
-    const finalUrl = params ? buildApiUrl(url, params) : url
-    return request<T>(finalUrl, { ...options, method: 'GET' })
+  get: <T = any>(endpoint: string, params?: Record<string, any>, options?: RequestOptions): Promise<T> => {
+    const url = buildUrl(endpoint, params)
+    return request<T>(url, { ...options, method: 'GET' })
   },
 
-  post: <T = any>(url: string, data?: any, options?: RequestOptions): Promise<T> => {
-    return request<T>(url, {
+  post: <T = any>(endpoint: string, data?: any, options?: RequestOptions): Promise<T> => {
+    return request<T>(endpoint, {
       ...options,
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
     })
   },
 
-  put: <T = any>(url: string, data?: any, options?: RequestOptions): Promise<T> => {
-    return request<T>(url, {
+  put: <T = any>(endpoint: string, data?: any, options?: RequestOptions): Promise<T> => {
+    return request<T>(endpoint, {
       ...options,
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
     })
   },
 
-  patch: <T = any>(url: string, data?: any, options?: RequestOptions): Promise<T> => {
-    return request<T>(url, {
+  patch: <T = any>(endpoint: string, data?: any, options?: RequestOptions): Promise<T> => {
+    return request<T>(endpoint, {
       ...options,
       method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined,
     })
   },
 
-  delete: <T = any>(url: string, options?: RequestOptions): Promise<T> => {
-    return request<T>(url, { ...options, method: 'DELETE' })
+  delete: <T = any>(endpoint: string, options?: RequestOptions): Promise<T> => {
+    return request<T>(endpoint, { ...options, method: 'DELETE' })
   },
 }
 

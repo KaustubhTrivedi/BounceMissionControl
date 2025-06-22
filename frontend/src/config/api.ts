@@ -8,9 +8,18 @@ const getEnvVar = (key: string, fallback: string): string => {
   return import.meta.env[key] || fallback
 }
 
-// Base URLs
-export const BACKEND_URL = getEnvVar('VITE_BACKEND_URL', 'http://localhost:3000')
-export const API_BASE_URL = getEnvVar('VITE_API_BASE_URL', `${BACKEND_URL}/api`)
+// API configuration for both development and production
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.MODE === 'production' 
+    ? 'https://your-render-app-name.onrender.com' // Replace with your actual Render URL
+    : 'http://localhost:3001');
+
+export default API_BASE_URL;
+
+// Helper function to get full API URL
+export const getApiUrl = (endpoint: string) => {
+  return `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+};
 
 // API Configuration
 export const apiConfig = {
@@ -50,7 +59,6 @@ export const isProduction = import.meta.env.PROD
 // Debug helper
 if (isDevelopment) {
   console.log('API Configuration:', {
-    BACKEND_URL,
     API_BASE_URL,
     endpoints,
   })

@@ -7,8 +7,10 @@ module.exports = {
       'http://localhost:5173',          // Vite dev server
       'http://localhost:3000',          // Alternative dev server
       'https://localhost:5173',         // HTTPS dev server
+      'https://bouncemissioncontrolfe.kaustubhsstuff.com', // Production frontend domain
       /\.netlify\.app$/,                // All Netlify apps
       /netlify\.app$/,                  // Alternative Netlify pattern
+      /\.kaustubhsstuff\.com$/,         // Allow all subdomains of kaustubhsstuff.com
     ].filter(Boolean), // Remove any undefined values
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

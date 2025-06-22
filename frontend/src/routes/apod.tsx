@@ -1,88 +1,31 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
+import { useAPOD } from '@/hooks/useNASA'
+import { APOD_START_DATE, TODAY } from '@/services/nasa'
 
 export const Route = createFileRoute('/apod')({
   component: APOD,
 })
-
-interface APODData {
-  title: string
-  explanation: string
-  url: string
-  media_type: 'image' | 'video'
-  date: string
-  hdurl?: string
-}
-
 function APOD() {
-  const [apodData, setApodData] = useState<APODData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
-  const [isDateChanging, setIsDateChanging] = useState(false)
-
-  // Helper function to normalize date to midnight
-  const normalizeDate = (date: Date): Date => {
-    const normalized = new Date(date)
-    normalized.setHours(0, 0, 0, 0)
-    return normalized
-  }
-
-  // Helper function to format date in local timezone (YYYY-MM-DD)
-  const formatDateForAPI = (date: Date): string => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
-  const fetchAPOD = async (date?: Date) => {
-    setLoading(true)
-    setError(null)
-    
-    try {
-      const dateString = date ? formatDateForAPI(date) : undefined
-      const url = dateString 
-        ? `http://localhost:3000/api/apod?date=${dateString}`
-        : 'http://localhost:3000/api/apod'
-      
-      const response = await fetch(url)
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch APOD: ${response.status} ${response.statusText}`)
-      }
-      
-      const data = await response.json()
-      setApodData(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchAPOD()
-  }, [])
-
+  const { 
+    data: apodData, 
+    isLoading, 
+    error, 
+    refetch,
+    isFetching
+  } = useAPOD(selectedDate)
   const handleDateChange = (date: Date | undefined) => {
     setSelectedDate(date)
-    
-    if (date) {
-      setIsDateChanging(true)
-      fetchAPOD(date).finally(() => setIsDateChanging(false))
-    }
   }
 
   const resetToToday = () => {
     setSelectedDate(undefined)
-    setIsDateChanging(false)
-    fetchAPOD()
   }
 
-  if (loading && !isDateChanging) {
+  if (isLoading && !isFetching) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -103,9 +46,9 @@ function APOD() {
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading APOD</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-gray-600 mb-4">{error?.message || 'An error occurred'}</p>
           <Button 
-            onClick={() => fetchAPOD(selectedDate)}
+            onClick={() => refetch()}
             className="bg-blue-600 text-white hover:bg-blue-700"
           >
             Try Again
@@ -115,8 +58,8 @@ function APOD() {
     )
   }
 
-  const apodStartDate = new Date('1995-06-16') // Already normalized
-  const today = normalizeDate(new Date()) // Normalize current date
+  const apodStartDate = APOD_START_DATE
+  const today = TODAY
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -144,16 +87,16 @@ function APOD() {
                 placeholder="Pick a date for APOD"
                 minDate={apodStartDate}
                 maxDate={today}
-                disabled={loading}
+                disabled={isLoading}
               />
-              {isDateChanging && (
+              {isFetching && (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
               )}
             </div>
             <Button
               onClick={resetToToday}
               variant="default"
-              disabled={loading}
+              disabled={isLoading}
             >
               Today's APOD
             </Button>

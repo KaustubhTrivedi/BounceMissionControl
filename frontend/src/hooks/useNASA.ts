@@ -11,7 +11,8 @@ import {
   type MarsRoverResponse, 
   type RoverManifest, 
   type MostActiveRoverResponse,
-  type RoverName
+  type RoverName,
+  type MultiPlanetDashboardResponse
 } from '@/services/nasa'
 
 // Query Keys
@@ -23,6 +24,7 @@ export const nasaQueryKeys = {
   roverManifest: (rover: string) => ['nasa', 'rover-manifest', rover] as const,
   mostActiveRover: () => ['nasa', 'most-active-rover'] as const,
   latestRoverPhotos: (params: Record<string, any>) => ['nasa', 'latest-rover-photos', params] as const,
+  multiPlanetaryDashboard: () => ['nasa', 'multi-planetary-dashboard'] as const,
 }
 
 // APOD Hook
@@ -166,6 +168,19 @@ export const useLatestPerseveranceWeather = () => {
     timestamp: weatherData?.timestamp,
     ...rest
   }
+}
+
+// Hook to get multi-planetary dashboard data
+export const useMultiPlanetaryDashboard = (
+  options?: Omit<UseQueryOptions<MultiPlanetDashboardResponse>, 'queryKey' | 'queryFn'>
+) => {
+  return useQuery({
+    queryKey: nasaQueryKeys.multiPlanetaryDashboard(),
+    queryFn: () => nasaApi.getMultiPlanetaryDashboard(),
+    staleTime: 1000 * 60 * 15, // 15 minutes
+    gcTime: 1000 * 60 * 60 * 2, // 2 hours
+    ...options,
+  })
 }
 
 // Export available rovers for components

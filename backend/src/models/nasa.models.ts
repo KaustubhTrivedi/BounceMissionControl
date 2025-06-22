@@ -103,4 +103,63 @@ export interface PerseveranceWeatherResponse {
     }
   }
   timestamp: string
+}
+
+// Multi-Planetary Dashboard Types
+export interface PlanetMission {
+  name: string
+  status: 'active' | 'planned' | 'completed' | 'en-route'
+  launch_date?: string
+  arrival_date?: string
+  mission_type: 'orbiter' | 'rover' | 'lander' | 'flyby' | 'sample-return'
+  description: string
+}
+
+export interface PlanetConditions {
+  temperature: {
+    average: number
+    min: number
+    max: number
+    unit: string
+  }
+  atmosphere?: {
+    composition: string
+    pressure?: number
+    pressure_unit?: string
+  }
+  gravity: number // in Earth gravities
+  day_length: string
+  radiation_level?: 'low' | 'moderate' | 'high' | 'extreme'
+}
+
+export interface PlanetData {
+  id: string
+  name: string
+  type: 'planet' | 'moon' | 'asteroid' | 'dwarf-planet'
+  active_missions: PlanetMission[]
+  mission_count: number
+  surface_conditions: PlanetConditions
+  last_activity: {
+    date: string
+    description: string
+    days_ago: number
+  }
+  next_event?: {
+    date: string
+    description: string
+    days_until: number
+  }
+  notable_fact: string
+  data_freshness: {
+    last_updated: string
+    hours_ago: number
+  }
+  image_url?: string
+}
+
+export interface MultiPlanetDashboardResponse {
+  planets: PlanetData[]
+  total_active_missions: number
+  timestamp: string
+  last_updated: string
 } 

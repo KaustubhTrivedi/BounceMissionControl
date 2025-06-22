@@ -6,7 +6,8 @@ import {
   getRoverManifest, 
   getMostActiveRoverEndpoint, 
   getLatestRoverPhotos,
-  getPerseveranceWeatherData
+  getPerseveranceWeatherData,
+  getMultiPlanetaryDashboardData
 } from '../controllers/nasa.controller'
 import { asyncHandler } from '../utils/async-handler'
 
@@ -16,20 +17,23 @@ const router = Router()
 router.get('/', healthCheck)
 
 // APOD (Astronomy Picture of the Day) endpoint
-router.get('/api/apod', asyncHandler(getAPOD))
+router.get('/apod', asyncHandler(getAPOD))
 
 // Mars Rover Photos endpoints
-router.get('/api/mars-photos', asyncHandler(getMarsRoverPhotos)) // Default rover (curiosity)
-router.get('/api/mars-photos/:rover', asyncHandler(getMarsRoverPhotos)) // Specific rover
+router.get('/mars-photos', asyncHandler(getMarsRoverPhotos)) // Default rover (curiosity)
+router.get('/mars-photos/:rover', asyncHandler(getMarsRoverPhotos)) // Specific rover
 
 // Rover manifest endpoints
-router.get('/api/rover-manifest/:rover', asyncHandler(getRoverManifest))
+router.get('/rover-manifest/:rover', asyncHandler(getRoverManifest))
 
 // Most active rover endpoints
-router.get('/api/most-active-rover', asyncHandler(getMostActiveRoverEndpoint))
-router.get('/api/latest-rover-photos', asyncHandler(getLatestRoverPhotos)) // Photos from most active rover
+router.get('/most-active-rover', asyncHandler(getMostActiveRoverEndpoint))
+router.get('/latest-rover-photos', asyncHandler(getLatestRoverPhotos)) // Photos from most active rover
 
 // Perseverance MEDA weather route
-router.get('/api/perseverance-weather', asyncHandler(getPerseveranceWeatherData))
+router.get('/perseverance-weather', asyncHandler(getPerseveranceWeatherData))
+
+// Multi-planetary dashboard endpoint
+router.get('/multi-planetary-dashboard', asyncHandler(getMultiPlanetaryDashboardData))
 
 export default router 

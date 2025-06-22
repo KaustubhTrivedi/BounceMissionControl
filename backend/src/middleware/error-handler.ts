@@ -45,7 +45,13 @@ export const notFoundHandler = (req: Request, res: Response) => {
     available_endpoints: [
       'GET /',
       'GET /api/apod?date=YYYY-MM-DD',
-      'GET /api/mars-photos?sol=NUMBER'
+      'GET /api/mars-photos?sol=NUMBER',
+      'GET /api/mars-photos/:rover?sol=NUMBER',
+      'GET /api/rover-manifest/:rover',
+      'GET /api/most-active-rover',
+      'GET /api/latest-rover-photos?sol=NUMBER',
+      'GET /api/perseverance-weather',
+      'GET /api/multi-planetary-dashboard'
     ],
     timestamp: new Date().toISOString()
   })

@@ -13,30 +13,31 @@ type RoverPhoto = MarsRoverPhoto
 
 function MarsRover() {
   const [sol, setSol] = useState<string>('')
+  const [searchedSol, setSearchedSol] = useState<number | undefined>(undefined) // undefined means get latest photos
   const [selectedPhoto, setSelectedPhoto] = useState<RoverPhoto | null>(null)
   
-  // Use React Query hook for data fetching
-  const solNumber = sol ? parseInt(sol, 10) : undefined
-  const validSol = solNumber !== undefined && !isNaN(solNumber) ? solNumber : undefined
-  
+  // Use React Query hook for data fetching - only refetches when searchedSol changes
   const { 
     data: roverData, 
     isLoading, 
     error, 
     refetch,
     isFetching
-  } = useMarsRoverPhotos({ sol: validSol })
-
-  // No need for manual fetch function with React Query
+  } = useMarsRoverPhotos({ sol: searchedSol })
 
   const handleSolSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    // Sol state change will trigger the React Query refetch automatically
+    const solNumber = sol ? parseInt(sol, 10) : undefined
+    
+    // Only update searchedSol if we have a valid number
+    if (solNumber !== undefined && !isNaN(solNumber) && solNumber >= 0) {
+      setSearchedSol(solNumber)
+    }
   }
 
   const resetToLatest = () => {
     setSol('')
-    // Setting sol to empty will trigger the React Query refetch automatically
+    setSearchedSol(undefined) // undefined triggers latest photos fetch
   }
 
   const openModal = (photo: RoverPhoto) => {
@@ -107,12 +108,12 @@ function MarsRover() {
                 onChange={(e) => setSol(e.target.value)}
                 placeholder="Enter sol number (e.g. 1000)"
                 min="0"
-                disabled={isLoading || isFetching}
+                disabled={isFetching}
                 className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 type="submit"
-                disabled={isLoading || isFetching}
+                disabled={isFetching || !sol.trim()}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isFetching ? 'Searching...' : 'Search'}
@@ -120,7 +121,7 @@ function MarsRover() {
               <button
                 type="button"
                 onClick={resetToLatest}
-                disabled={isLoading || isFetching}
+                disabled={isFetching}
                 className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isFetching ? 'Loading...' : 'Latest Photos'}
@@ -133,8 +134,8 @@ function MarsRover() {
             <div className="mb-6">
               <p className="text-gray-600 text-center">
                 {roverData.photos.length > 0 
-                  ? `Found ${roverData.photos.length} photo${roverData.photos.length !== 1 ? 's' : ''} ${sol ? `from Sol ${sol}` : 'from the latest available day'}`
-                  : `No photos found ${sol ? `for Sol ${sol}` : 'for the latest day'}`
+                  ? `Found ${roverData.photos.length} photo${roverData.photos.length !== 1 ? 's' : ''} ${searchedSol !== undefined ? `from Sol ${searchedSol}` : 'from the latest available day'}`
+                  : `No photos found ${searchedSol !== undefined ? `for Sol ${searchedSol}` : 'for the latest day'}`
                 }
               </p>
             </div>
@@ -183,7 +184,7 @@ function MarsRover() {
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No photos found</h3>
               <p className="text-gray-600 mb-4">
-                {sol ? `No photos were taken on Sol ${sol}. ` : ''}
+                {searchedSol !== undefined ? `No photos were taken on Sol ${searchedSol}. ` : ''}
                 Try searching for a different Martian day.
               </p>
               <button

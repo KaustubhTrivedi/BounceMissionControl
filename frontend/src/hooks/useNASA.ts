@@ -48,7 +48,7 @@ export const useMarsRoverPhotos = (
     gcTime: 60 * 60 * 1000, // 1 hour
     retry: 3,
     retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    enabled: Object.keys(params).length > 0 || params.rover !== undefined,
+    enabled: Object.values(params).some(value => value !== undefined),
     ...options,
   })
 }

@@ -6,22 +6,6 @@ interface PlanetCardProps {
 }
 
 const PlanetCard: React.FC<PlanetCardProps> = ({ planet }) => {
-  // Get status-based styling
-  const getStatusBadgeStyle = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-500/20 border-green-400/30 text-green-300'
-      case 'planned':
-        return 'bg-blue-500/20 border-blue-400/30 text-blue-300'
-      case 'en-route':
-        return 'bg-yellow-500/20 border-yellow-400/30 text-yellow-300'
-      case 'completed':
-        return 'bg-gray-500/20 border-gray-400/30 text-gray-300'
-      default:
-        return 'bg-gray-500/20 border-gray-400/30 text-gray-300'
-    }
-  }
-
   // Get radiation level styling
   const getRadiationStyle = (level?: string) => {
     switch (level) {

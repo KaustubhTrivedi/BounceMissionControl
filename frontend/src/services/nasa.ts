@@ -115,19 +115,79 @@ export interface PerseveranceWeatherResponse {
   timestamp: string
 }
 
+// Multi-Planetary Dashboard Types
+export interface PlanetMission {
+  name: string
+  status: 'active' | 'planned' | 'completed' | 'en-route'
+  launch_date?: string
+  arrival_date?: string
+  mission_type: 'orbiter' | 'rover' | 'lander' | 'flyby' | 'sample-return'
+  description: string
+}
+
+export interface PlanetConditions {
+  temperature: {
+    average: number
+    min: number
+    max: number
+    unit: string
+  }
+  atmosphere?: {
+    composition: string
+    pressure?: number
+    pressure_unit?: string
+  }
+  gravity: number // in Earth gravities
+  day_length: string
+  radiation_level?: 'low' | 'moderate' | 'high' | 'extreme'
+}
+
+export interface PlanetData {
+  id: string
+  name: string
+  type: 'planet' | 'moon' | 'asteroid' | 'dwarf-planet'
+  active_missions: PlanetMission[]
+  mission_count: number
+  surface_conditions: PlanetConditions
+  last_activity: {
+    date: string
+    description: string
+    days_ago: number
+  }
+  next_event?: {
+    date: string
+    description: string
+    days_until: number
+  }
+  notable_fact: string
+  data_freshness: {
+    last_updated: string
+    hours_ago: number
+  }
+  image_url?: string
+}
+
+export interface MultiPlanetDashboardResponse {
+  planets: PlanetData[]
+  total_active_missions: number
+  timestamp: string
+  last_updated: string
+}
+
 // Available rovers
 export const AVAILABLE_ROVERS = ['curiosity', 'opportunity', 'spirit', 'perseverance'] as const
 export type RoverName = typeof AVAILABLE_ROVERS[number]
 
 // API endpoints
 const endpoints = {
-  apod: '/api/apod',
-  marsPhotos: '/api/mars-photos',
-  marsPhotosRover: (rover: string) => `/api/mars-photos/${rover}`,
-  roverManifest: (rover: string) => `/api/rover-manifest/${rover}`,
-  mostActiveRover: '/api/most-active-rover',
-  latestRoverPhotos: '/api/latest-rover-photos',
-  perseveranceWeather: '/api/perseverance-weather',
+  apod: '/apod',
+  marsPhotos: '/mars-photos',
+  marsPhotosRover: (rover: string) => `/mars-photos/${rover}`,
+  roverManifest: (rover: string) => `/rover-manifest/${rover}`,
+  mostActiveRover: '/most-active-rover',
+  latestRoverPhotos: '/latest-rover-photos',
+  perseveranceWeather: '/perseverance-weather',
+  multiPlanetaryDashboard: '/multi-planetary-dashboard',
 }
 
 // NASA API Service Functions
@@ -182,6 +242,11 @@ export const nasaApi = {
   // Get Perseverance MEDA weather data
   getPerseveranceWeather: async (): Promise<PerseveranceWeatherResponse> => {
     return api.get<PerseveranceWeatherResponse>(endpoints.perseveranceWeather)
+  },
+
+  // Get multi-planetary dashboard data
+  getMultiPlanetaryDashboard: async (): Promise<MultiPlanetDashboardResponse> => {
+    return api.get<MultiPlanetDashboardResponse>(endpoints.multiPlanetaryDashboard)
   },
 }
 

@@ -11,8 +11,7 @@ import {
   type MarsRoverResponse, 
   type RoverManifest, 
   type MostActiveRoverResponse,
-  type RoverName,
-  type PerseveranceWeatherResponse
+  type RoverName
 } from '@/services/nasa'
 
 // Query Keys

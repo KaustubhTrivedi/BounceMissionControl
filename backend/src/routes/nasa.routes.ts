@@ -5,7 +5,8 @@ import {
   getMarsRoverPhotos, 
   getRoverManifest, 
   getMostActiveRoverEndpoint, 
-  getLatestRoverPhotos 
+  getLatestRoverPhotos,
+  getPerseveranceWeatherData
 } from '../controllers/nasa.controller'
 import { asyncHandler } from '../utils/async-handler'
 
@@ -27,5 +28,8 @@ router.get('/api/rover-manifest/:rover', asyncHandler(getRoverManifest))
 // Most active rover endpoints
 router.get('/api/most-active-rover', asyncHandler(getMostActiveRoverEndpoint))
 router.get('/api/latest-rover-photos', asyncHandler(getLatestRoverPhotos)) // Photos from most active rover
+
+// Perseverance MEDA weather route
+router.get('/api/perseverance-weather', asyncHandler(getPerseveranceWeatherData))
 
 export default router 

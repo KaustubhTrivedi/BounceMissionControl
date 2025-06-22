@@ -6,7 +6,7 @@
 // API configuration for both development and production
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
   (import.meta.env.MODE === 'production' 
-    ? 'https://bouncemissioncontrol.onrender.com' // Replace with your actual Render URL
+    ? 'https://bouncemissioncontrol.onrender.com' // Updated with actual Render URL
     : 'http://localhost:3001');
 
 export default API_BASE_URL;

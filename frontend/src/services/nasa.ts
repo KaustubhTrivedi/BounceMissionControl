@@ -44,8 +44,8 @@ export interface MarsRoverResponse {
 
 // API endpoints
 const endpoints = {
-  apod: '/api/nasa/apod',
-  marsPhotos: '/api/nasa/mars-rover/photos',
+  apod: '/api/apod',
+  marsPhotos: '/api/mars-photos',
 }
 
 // NASA API Service Functions

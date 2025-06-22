@@ -1,70 +1,42 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useMarsRoverPhotos } from '@/hooks/useNASA'
 
 export const Route = createFileRoute('/mars-rover')({
   component: MarsRover,
 })
 
-interface RoverPhoto {
-  id: number
-  img_src: string
-  earth_date: string
-  sol: number
-  camera: {
-    name: string
-    full_name: string
-  }
-}
+import type { MarsRoverPhoto } from '@/services/nasa'
 
-interface MarsRoverData {
-  photos: RoverPhoto[]
-}
+// Use MarsRoverPhoto from service, create alias for compatibility
+type RoverPhoto = MarsRoverPhoto
 
 function MarsRover() {
-  const [roverData, setRoverData] = useState<MarsRoverData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [sol, setSol] = useState<string>('')
   const [selectedPhoto, setSelectedPhoto] = useState<RoverPhoto | null>(null)
+  
+  // Use React Query hook for data fetching
+  const solNumber = sol ? parseInt(sol, 10) : undefined
+  const validSol = solNumber !== undefined && !isNaN(solNumber) ? solNumber : undefined
+  
+  const { 
+    data: roverData, 
+    isLoading, 
+    error, 
+    refetch,
+    isFetching
+  } = useMarsRoverPhotos({ sol: validSol })
 
-  const fetchMarsPhotos = async (solNumber?: string) => {
-    setLoading(true)
-    setError(null)
-    
-    try {
-      const url = solNumber 
-        ? `http://localhost:3000/api/mars-photos?sol=${solNumber}`
-        : 'http://localhost:3000/api/mars-photos'
-      
-      const response = await fetch(url)
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch Mars rover photos: ${response.status} ${response.statusText}`)
-      }
-      
-      const data = await response.json()
-      setRoverData(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchMarsPhotos()
-  }, [])
+  // No need for manual fetch function with React Query
 
   const handleSolSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    if (sol.trim()) {
-      fetchMarsPhotos(sol.trim())
-    }
+    // Sol state change will trigger the React Query refetch automatically
   }
 
   const resetToLatest = () => {
     setSol('')
-    fetchMarsPhotos()
+    // Setting sol to empty will trigger the React Query refetch automatically
   }
 
   const openModal = (photo: RoverPhoto) => {
@@ -75,7 +47,7 @@ function MarsRover() {
     setSelectedPhoto(null)
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -96,9 +68,9 @@ function MarsRover() {
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Photos</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-gray-600 mb-4">{error instanceof Error ? error.message : String(error) || 'An error occurred'}</p>
           <button 
-            onClick={() => fetchMarsPhotos(sol || undefined)}
+            onClick={() => refetch()}
             className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
           >
             Try Again
@@ -135,20 +107,23 @@ function MarsRover() {
                 onChange={(e) => setSol(e.target.value)}
                 placeholder="Enter sol number (e.g. 1000)"
                 min="0"
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                disabled={isLoading || isFetching}
+                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 type="submit"
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
+                disabled={isLoading || isFetching}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Search
+                {isFetching ? 'Searching...' : 'Search'}
               </button>
               <button
                 type="button"
                 onClick={resetToLatest}
-                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm"
+                disabled={isLoading || isFetching}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Latest Photos
+                {isFetching ? 'Loading...' : 'Latest Photos'}
               </button>
             </form>
           </div>

@@ -46,7 +46,7 @@ function APOD() {
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading APOD</h3>
-          <p className="text-gray-600 mb-4">{error?.message || 'An error occurred'}</p>
+          <p className="text-gray-600 mb-4">{error instanceof Error ? error.message : String(error) || 'An error occurred'}</p>
           <Button 
             onClick={() => refetch()}
             className="bg-blue-600 text-white hover:bg-blue-700"

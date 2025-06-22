@@ -17,7 +17,7 @@ function MarsRover() {
   
   // Use React Query hook for data fetching
   const solNumber = sol ? parseInt(sol, 10) : undefined
-  const validSol = solNumber && !isNaN(solNumber) ? solNumber : undefined
+  const validSol = solNumber !== undefined && !isNaN(solNumber) ? solNumber : undefined
   
   const { 
     data: roverData, 
@@ -68,7 +68,7 @@ function MarsRover() {
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Photos</h3>
-          <p className="text-gray-600 mb-4">{error?.message || 'An error occurred'}</p>
+          <p className="text-gray-600 mb-4">{error instanceof Error ? error.message : String(error) || 'An error occurred'}</p>
           <button 
             onClick={() => refetch()}
             className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"

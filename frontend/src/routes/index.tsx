@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useMostActiveRoverWithPhotos, AVAILABLE_ROVERS } from '@/hooks/useNASA'
+import { useMostActiveRoverWithPhotos } from '@/hooks/useNASA'
 import { getRoverDisplayName } from '@/services/nasa'
 
 export const Route = createFileRoute('/')({

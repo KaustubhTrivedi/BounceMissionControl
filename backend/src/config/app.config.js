@@ -3,10 +3,10 @@ module.exports = {
   environment: process.env.NODE_ENV || 'development',
   cors: {
     origin: [
+      process.env.FRONTEND_URL,         // Environment variable
       'http://localhost:5173',          // Vite dev server
       'http://localhost:3000',          // Alternative dev server
       'https://localhost:5173',         // HTTPS dev server
-      process.env.FRONTEND_URL,         // Environment variable
       /\.netlify\.app$/,                // All Netlify apps
       /netlify\.app$/,                  // Alternative Netlify pattern
     ].filter(Boolean), // Remove any undefined values

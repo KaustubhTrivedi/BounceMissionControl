@@ -57,4 +57,50 @@ export interface ErrorResponse {
   error: string
   details?: string
   timestamp?: string
+}
+
+// Perseverance MEDA Weather Data Interfaces
+export interface PerseveranceWeatherSensor {
+  average?: number | null
+  minimum?: number | null
+  maximum?: number | null
+  count?: number | null
+}
+
+export interface PerseveranceWindData {
+  speed?: PerseveranceWeatherSensor
+  direction?: {
+    compass_point?: string
+    degrees?: number
+  }
+}
+
+export interface PerseveranceSolWeatherData {
+  sol: number
+  terrestrial_date: string
+  temperature: {
+    air?: PerseveranceWeatherSensor
+    ground?: PerseveranceWeatherSensor
+  }
+  pressure?: PerseveranceWeatherSensor
+  wind?: PerseveranceWindData
+  humidity?: PerseveranceWeatherSensor
+  season?: string
+  sunrise?: string
+  sunset?: string
+  local_uv_irradiance_index?: string
+  atmosphere_opacity?: string
+}
+
+export interface PerseveranceWeatherResponse {
+  latest_sol: number
+  sol_data: PerseveranceSolWeatherData
+  location: {
+    name: string
+    coordinates: {
+      latitude: number
+      longitude: number
+    }
+  }
+  timestamp: string
 } 

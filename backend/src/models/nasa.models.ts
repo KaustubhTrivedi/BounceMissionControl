@@ -49,6 +49,7 @@ export interface MarsRoverAPIResponse {
   total_photos: number
   rover: MarsRoverInfo | null
   sol: string | number
+  selected_rover?: string
 }
 
 // Error Response Interface

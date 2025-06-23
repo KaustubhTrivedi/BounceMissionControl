@@ -187,7 +187,7 @@ function Index() {
                 {/* Mars Rover Photos Link */}
                 <Link 
                   to="/mars-rover" 
-                  className="group bg-gradient-to-br from-red-900/40 to-orange-900/40 backdrop-blur-sm border border-red-400/20 rounded-xl p-6 hover:border-red-400/40 transition-all duration-300"
+                  className="group bg-gradient-to-br from-red-900/40 to-orange-900/40 backdrop-blur-sm border border-red-400/20 rounded-xl p-6 hover:border-red-400/40 transition-all duration-300 flex flex-col h-full"
                 >
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="w-8 h-8 text-red-400">
@@ -199,7 +199,7 @@ function Index() {
                       Mars Rover Photos
                     </h3>
                   </div>
-                  <p className="text-gray-300 group-hover:text-gray-200 transition-colors">
+                  <p className="text-gray-300 group-hover:text-gray-200 transition-colors flex-grow">
                     Explore thousands of photos captured by NASA's Mars rovers including Curiosity and Perseverance
                   </p>
                   <div className="mt-4 flex items-center text-red-300 group-hover:text-red-200 transition-colors">
@@ -212,7 +212,7 @@ function Index() {
 
                 <Link 
                   to="/apod" 
-                  className="group bg-gradient-to-br from-indigo-900/40 to-purple-900/40 backdrop-blur-sm border border-indigo-400/20 rounded-xl p-6 hover:border-indigo-400/40 transition-all duration-300"
+                  className="group bg-gradient-to-br from-indigo-900/40 to-purple-900/40 backdrop-blur-sm border border-indigo-400/20 rounded-xl p-6 hover:border-indigo-400/40 transition-all duration-300 flex flex-col h-full"
                 >
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="w-8 h-8 text-indigo-400">
@@ -224,7 +224,7 @@ function Index() {
                       Deep Space Images
                     </h3>
                   </div>
-                  <p className="text-gray-300 group-hover:text-gray-200 transition-colors">
+                  <p className="text-gray-300 group-hover:text-gray-200 transition-colors flex-grow">
                     Daily astronomical discoveries and cosmic phenomena captured by NASA
                   </p>
                   <div className="mt-4 flex items-center text-indigo-300 group-hover:text-indigo-200 transition-colors">
@@ -237,7 +237,7 @@ function Index() {
 
                 <Link 
                   to="/mars-weather" 
-                  className="group bg-gradient-to-br from-amber-900/40 to-orange-900/40 backdrop-blur-sm border border-amber-400/20 rounded-xl p-6 hover:border-amber-400/40 transition-all duration-300"
+                  className="group bg-gradient-to-br from-amber-900/40 to-orange-900/40 backdrop-blur-sm border border-amber-400/20 rounded-xl p-6 hover:border-amber-400/40 transition-all duration-300 flex flex-col h-full"
                 >
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="w-8 h-8 text-amber-400">
@@ -249,7 +249,7 @@ function Index() {
                       Mars Weather
                     </h3>
                   </div>
-                  <p className="text-gray-300 group-hover:text-gray-200 transition-colors">
+                  <p className="text-gray-300 group-hover:text-gray-200 transition-colors flex-grow">
                     Live weather data from Perseverance rover's MEDA instruments on Mars
                   </p>
                   <div className="mt-4 flex items-center text-amber-300 group-hover:text-amber-200 transition-colors">
@@ -260,7 +260,7 @@ function Index() {
                   </div>
                 </Link>
 
-                <div className="group bg-gradient-to-br from-emerald-900/40 to-teal-900/40 backdrop-blur-sm border border-emerald-400/20 rounded-xl p-6">
+                <div className="group bg-gradient-to-br from-emerald-900/40 to-teal-900/40 backdrop-blur-sm border border-emerald-400/20 rounded-xl p-6 flex flex-col h-full">
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="w-8 h-8 text-emerald-400">
                       <svg fill="currentColor" viewBox="0 0 24 24">
@@ -271,10 +271,10 @@ function Index() {
                       Mission Status
                     </h3>
                   </div>
-                  <p className="text-gray-300 mb-4">
+                  <p className="text-gray-300 flex-grow">
                     Real-time monitoring of active space missions across the solar system
                   </p>
-                  <div className="space-y-2">
+                  <div className="mt-4 space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-400">Active Missions</span>
                       <span className="text-emerald-300 font-medium">{totalActiveMissions}</span>

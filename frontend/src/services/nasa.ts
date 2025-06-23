@@ -174,20 +174,78 @@ export interface MultiPlanetDashboardResponse {
   last_updated: string
 }
 
+// Historic Mars Weather Types
+export interface HistoricWeatherData {
+  mission_info: {
+    name: string
+    location: string
+    coordinates: { latitude: number; longitude: number }
+    mission_duration: string
+    earth_dates: { start: string; end: string }
+    status: string
+    total_sols: number
+  }
+  temperature_data: Array<{
+    sol: number
+    earth_date: string
+    min_temp: number | null
+    max_temp: number | null
+    avg_temp: number | null
+    temp_range: number | null
+    season: string
+    sample_count: number
+  }>
+  pressure_data: Array<{
+    sol: number
+    earth_date: string
+    pressure: number | null
+    pressure_min: number | null
+    pressure_max: number | null
+    season: string
+    sample_count: number
+  }>
+  wind_data: Array<{
+    sol: number
+    earth_date: string
+    wind_speed?: number | null
+    wind_speed_min?: number | null
+    wind_speed_max?: number | null
+    wind_direction?: string | null
+    wind_direction_degrees?: number | null
+    season: string
+  }>
+  atmospheric_conditions: Array<{
+    sol: number
+    earth_date: string
+    season: string
+    has_temperature: boolean
+    has_pressure: boolean
+    has_wind_speed: boolean
+    has_wind_direction: boolean
+    data_quality: number
+  }>
+}
+
+export interface HistoricMarsWeatherResponse {
+  data: HistoricWeatherData
+  timestamp: string
+}
+
 // Available rovers
 export const AVAILABLE_ROVERS = ['curiosity', 'opportunity', 'spirit', 'perseverance'] as const
 export type RoverName = typeof AVAILABLE_ROVERS[number]
 
 // API endpoints
 const endpoints = {
-  apod: '/apod',
-  marsPhotos: '/mars-photos',
-  marsPhotosRover: (rover: string) => `/mars-photos/${rover}`,
-  roverManifest: (rover: string) => `/rover-manifest/${rover}`,
-  mostActiveRover: '/most-active-rover',
-  latestRoverPhotos: '/latest-rover-photos',
-  perseveranceWeather: '/perseverance-weather',
-  multiPlanetaryDashboard: '/multi-planetary-dashboard',
+  apod: '/api/apod',
+  marsPhotos: '/api/mars-photos',
+  marsPhotosRover: (rover: string) => `/api/mars-photos/${rover}`,
+  roverManifest: (rover: string) => `/api/rover-manifest/${rover}`,
+  mostActiveRover: '/api/most-active-rover',
+  latestRoverPhotos: '/api/latest-rover-photos',
+  perseveranceWeather: '/api/perseverance-weather',
+  marsWeather: '/api/mars-weather',
+  multiPlanetaryDashboard: '/api/multi-planetary-dashboard',
 }
 
 // NASA API Service Functions
@@ -247,6 +305,11 @@ export const nasaApi = {
   // Get multi-planetary dashboard data
   getMultiPlanetaryDashboard: async (): Promise<MultiPlanetDashboardResponse> => {
     return api.get<MultiPlanetDashboardResponse>(endpoints.multiPlanetaryDashboard)
+  },
+
+  // Get historic Mars weather data (InSight legacy data)
+  getHistoricMarsWeather: async (): Promise<HistoricMarsWeatherResponse> => {
+    return api.get<HistoricMarsWeatherResponse>(endpoints.marsWeather)
   },
 }
 

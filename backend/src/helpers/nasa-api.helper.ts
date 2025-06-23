@@ -103,89 +103,453 @@ export const getMostActiveRover = async (): Promise<string> => {
   }
 }
 
-// Fetch Perseverance MEDA weather data (simulate from actual NASA data)
+// Fetch Mars weather data from available NASA sources
 export const fetchPerseveranceWeatherData = async (): Promise<PerseveranceWeatherResponse> => {
   try {
-    // Since the actual MEDA data API is complex, we'll create a simulated response
-    // based on real Perseverance weather patterns from Jezero Crater
-    const currentSol = Math.floor(Math.random() * 100) + 1200 // Simulate current sol
-    const currentDate = new Date().toISOString().split('T')[0]
-    
-    // Simulate realistic Jezero Crater weather data
-    const baseTemp = -20 // Base temperature in Celsius
-    const tempVariation = Math.random() * 20 - 10 // ±10°C variation
-    const airTemp = baseTemp + tempVariation
-    const groundTemp = airTemp + Math.random() * 15 - 5 // Ground usually warmer
-    
-    const pressure = 600 + Math.random() * 200 // 600-800 Pa typical for Mars
-    const windSpeed = Math.random() * 25 // 0-25 m/s
-    const windDirections = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
-    const windDirection = windDirections[Math.floor(Math.random() * windDirections.length)]
-    
-    const response: PerseveranceWeatherResponse = {
-      latest_sol: currentSol,
-      sol_data: {
-        sol: currentSol,
-        terrestrial_date: currentDate,
-        temperature: {
-          air: {
-            average: Math.round(airTemp * 10) / 10,
-            minimum: Math.round((airTemp - 5) * 10) / 10,
-            maximum: Math.round((airTemp + 8) * 10) / 10,
-            count: 24
-          },
-          ground: {
-            average: Math.round(groundTemp * 10) / 10,
-            minimum: Math.round((groundTemp - 3) * 10) / 10,
-            maximum: Math.round((groundTemp + 12) * 10) / 10,
-            count: 24
-          }
-        },
-        pressure: {
-          average: Math.round(pressure * 10) / 10,
-          minimum: Math.round((pressure - 50) * 10) / 10,
-          maximum: Math.round((pressure + 50) * 10) / 10,
-          count: 24
-        },
-        wind: {
-          speed: {
-            average: Math.round(windSpeed * 10) / 10,
-            minimum: 0,
-            maximum: Math.round((windSpeed + 10) * 10) / 10,
-            count: 24
-          },
-          direction: {
-            compass_point: windDirection,
-            degrees: windDirections.indexOf(windDirection) * 45
-          }
-        },
-        humidity: {
-          average: Math.round((Math.random() * 100) * 10) / 10,
-          minimum: 0,
-          maximum: 100,
-          count: 24
-        },
-        season: 'Late Summer',
-        sunrise: '06:30',
-        sunset: '18:45',
-        local_uv_irradiance_index: 'Moderate',
-        atmosphere_opacity: 'Clear'
-      },
-      location: {
-        name: 'Jezero Crater',
-        coordinates: {
-          latitude: 18.4447,
-          longitude: 77.4508
-        }
-      },
-      timestamp: new Date().toISOString()
+    // First, try to get current Mars weather data from MAAS API (Curiosity REMS data)
+    const maasData = await fetchMAASWeatherData()
+    if (maasData && isDataRecent(maasData)) {
+      console.log('Using current MAAS weather data from Curiosity REMS')
+      return convertMAASToPersevaeranceFormat(maasData)
     }
     
-    return response
+    // Fallback to InSight weather data if MAAS is unavailable
+    const insightData = await fetchInSightWeatherData()
+    if (insightData && isDataRecent(insightData)) {
+      console.log('Using InSight historical weather data')
+      return convertInSightToPerseveranceFormat(insightData)
+    }
+    
+    // If InSight data is too old, try MSL weather service
+    const mslData = await fetchMSLWeatherData()
+    if (mslData && isDataRecent(mslData)) {
+      console.log('Using MSL weather data')
+      return convertMSLToPerseveranceFormat(mslData)
+    }
+    
+    // Fallback to current realistic simulation with today's date
+    console.log('Using current weather simulation due to unavailable/outdated data sources')
+    return generateRealisticMarsWeather()
+    
   } catch (error) {
-    console.error('Error fetching Perseverance weather data:', error)
-    throw error
+    console.error('Error fetching Mars weather data:', error)
+    // Return current simulation as fallback
+    return generateRealisticMarsWeather()
   }
+}
+
+// Check if weather data is recent (within 1 year)
+const isDataRecent = (data: any): boolean => {
+  try {
+    let dataDate: Date | null = null
+    
+    // For MAAS data
+    if (data.terrestrial_date) {
+      dataDate = new Date(data.terrestrial_date)
+    }
+    // For InSight data
+    else if (data.sol_keys && data.sol_keys.length > 0) {
+      const latestSol = data.sol_keys[data.sol_keys.length - 1]
+      const solData = data[latestSol]
+      if (solData.First_UTC) {
+        dataDate = new Date(solData.First_UTC)
+      }
+    }
+    
+    if (!dataDate) return false
+    
+    const oneYearAgo = new Date()
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+    
+    const isRecent = dataDate > oneYearAgo
+    console.log(`Data from ${dataDate.toISOString().split('T')[0]} is ${isRecent ? 'recent' : 'outdated'}`)
+    
+    return isRecent
+  } catch (error) {
+    console.warn('Error checking data recency:', error)
+    return false
+  }
+}
+
+// Fetch InSight weather data (historical)
+const fetchInSightWeatherData = async (): Promise<any> => {
+  try {
+    const response = await nasaApiClient.get(nasaConfig.endpoints.insightWeather, {
+      params: {
+        feedtype: 'json',
+        ver: '1.0'
+      }
+    })
+    return response.data
+  } catch (error) {
+    console.warn('InSight weather data not available:', error)
+    return null
+  }
+}
+
+// Fetch MSL (Curiosity) weather data
+const fetchMSLWeatherData = async (): Promise<any> => {
+  try {
+    const response = await axios.get(nasaConfig.endpoints.marsWeatherService, {
+      timeout: nasaConfig.timeout
+    })
+    return response.data
+  } catch (error) {
+    console.warn('MSL weather data not available:', error)
+    return null
+  }
+}
+
+// Fetch MAAS weather data (current Curiosity REMS data)
+const fetchMAASWeatherData = async (): Promise<any> => {
+  try {
+    const response = await axios.get(nasaConfig.endpoints.maasWeather, {
+      timeout: nasaConfig.timeout
+    })
+    return response.data
+  } catch (error) {
+    console.warn('MAAS weather data not available:', error)
+    return null
+  }
+}
+
+// Convert InSight data to Perseverance format
+const convertInSightToPerseveranceFormat = (insightData: any): PerseveranceWeatherResponse => {
+  const currentSol = Math.max(...insightData.sol_keys.map((sol: string) => parseInt(sol)))
+  const solData = insightData[currentSol.toString()]
+  
+  return {
+    latest_sol: currentSol,
+    sol_data: {
+      sol: currentSol,
+      terrestrial_date: solData.First_UTC?.split('T')[0] || new Date().toISOString().split('T')[0],
+      temperature: {
+        air: {
+          average: solData.AT?.av || -60,
+          minimum: solData.AT?.mn || -80,
+          maximum: solData.AT?.mx || -40,
+          count: solData.AT?.ct || 24
+        },
+        ground: {
+          average: (solData.AT?.av || -60) + 10,
+          minimum: (solData.AT?.mn || -80) + 5,
+          maximum: (solData.AT?.mx || -40) + 15,
+          count: 24
+        }
+      },
+      pressure: {
+        average: solData.PRE?.av || 700,
+        minimum: solData.PRE?.mn || 650,
+        maximum: solData.PRE?.mx || 750,
+        count: solData.PRE?.ct || 24
+      },
+      wind: {
+        speed: {
+          average: solData.HWS?.av || 5,
+          minimum: 0,
+          maximum: solData.HWS?.mx || 15,
+          count: solData.HWS?.ct || 24
+        },
+        direction: {
+          compass_point: solData.WD?.most_common?.compass_point || 'SW',
+          degrees: solData.WD?.most_common?.compass_degrees || 225
+        }
+      },
+      humidity: {
+        average: Math.random() * 100,
+        minimum: 0,
+        maximum: 100,
+        count: 24
+      },
+      season: solData.Season || 'Unknown',
+      sunrise: '06:30',
+      sunset: '18:45',
+      local_uv_irradiance_index: 'Moderate',
+      atmosphere_opacity: 'Clear'
+    },
+    location: {
+      name: 'Elysium Planitia (InSight Historical Data)',
+      coordinates: {
+        latitude: 4.5024,
+        longitude: 135.6234
+      }
+    },
+    timestamp: new Date().toISOString()
+  }
+}
+
+// Convert MSL data to Perseverance format
+const convertMSLToPerseveranceFormat = (mslData: any): PerseveranceWeatherResponse => {
+  const currentSol = mslData.sol || Math.floor(Math.random() * 100) + 3000
+  
+  return {
+    latest_sol: currentSol,
+    sol_data: {
+      sol: currentSol,
+      terrestrial_date: mslData.terrestrial_date || new Date().toISOString().split('T')[0],
+      temperature: {
+        air: {
+          average: mslData.min_temp ? (mslData.min_temp + mslData.max_temp) / 2 : -50,
+          minimum: mslData.min_temp || -70,
+          maximum: mslData.max_temp || -30,
+          count: 24
+        },
+        ground: {
+          average: mslData.min_gts_temp ? (mslData.min_gts_temp + mslData.max_gts_temp) / 2 : -40,
+          minimum: mslData.min_gts_temp || -60,
+          maximum: mslData.max_gts_temp || -20,
+          count: 24
+        }
+      },
+      pressure: {
+        average: mslData.pressure || 750,
+        minimum: (mslData.pressure || 750) - 50,
+        maximum: (mslData.pressure || 750) + 50,
+        count: 24
+      },
+      wind: {
+        speed: {
+          average: Math.random() * 20,
+          minimum: 0,
+          maximum: Math.random() * 30,
+          count: 24
+        },
+        direction: {
+          compass_point: 'SW',
+          degrees: 225
+        }
+      },
+      humidity: {
+        average: Math.random() * 100,
+        minimum: 0,
+        maximum: 100,
+        count: 24
+      },
+      season: mslData.season || 'Unknown',
+      sunrise: '06:30',
+      sunset: '18:45',
+      local_uv_irradiance_index: 'Moderate',
+      atmosphere_opacity: mslData.atmo_opacity || 'Clear'
+    },
+    location: {
+      name: 'Gale Crater (MSL/Curiosity Data)',
+      coordinates: {
+        latitude: -5.4,
+        longitude: 137.8
+      }
+    },
+    timestamp: new Date().toISOString()
+  }
+}
+
+// Convert MAAS data to Perseverance format
+const convertMAASToPersevaeranceFormat = (maasData: any): PerseveranceWeatherResponse => {
+  const currentSol = maasData.sol || 0
+  const terrestrialDate = maasData.terrestrial_date || new Date().toISOString().split('T')[0]
+  
+  // Convert temperatures from Celsius to match our format
+  const minTemp = maasData.min_temp || -70
+  const maxTemp = maasData.max_temp || -30
+  const avgTemp = (minTemp + maxTemp) / 2
+  
+  // Convert pressure from hPa to Pa (MAAS uses different units)
+  const pressure = (maasData.pressure || 7.5) * 100 // Convert hPa to Pa
+  
+  // Parse wind data
+  const windSpeed = maasData.wind_speed || 5
+  const windDirection = maasData.wind_direction || 'SW'
+  const windDegrees = getWindDegrees(windDirection)
+  
+  return {
+    latest_sol: currentSol,
+    sol_data: {
+      sol: currentSol,
+      terrestrial_date: terrestrialDate,
+      temperature: {
+        air: {
+          average: Math.round(avgTemp * 10) / 10,
+          minimum: Math.round(minTemp * 10) / 10,
+          maximum: Math.round(maxTemp * 10) / 10,
+          count: 24
+        },
+        ground: {
+          average: Math.round((avgTemp + 10) * 10) / 10,
+          minimum: Math.round((minTemp + 5) * 10) / 10,
+          maximum: Math.round((maxTemp + 15) * 10) / 10,
+          count: 24
+        }
+      },
+      pressure: {
+        average: Math.round(pressure * 10) / 10,
+        minimum: Math.round((pressure - 30) * 10) / 10,
+        maximum: Math.round((pressure + 30) * 10) / 10,
+        count: 24
+      },
+      wind: {
+        speed: {
+          average: Math.round(windSpeed * 10) / 10,
+          minimum: 0,
+          maximum: Math.round((windSpeed + 10) * 10) / 10,
+          count: 24
+        },
+        direction: {
+          compass_point: windDirection,
+          degrees: windDegrees
+        }
+      },
+      humidity: {
+        average: maasData.abs_humidity || Math.round((Math.random() * 50 + 10) * 10) / 10,
+        minimum: 0,
+        maximum: 100,
+        count: 24
+      },
+      season: maasData.season || 'Unknown',
+      sunrise: maasData.sunrise ? new Date(maasData.sunrise).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : '06:30',
+      sunset: maasData.sunset ? new Date(maasData.sunset).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : '18:45',
+      local_uv_irradiance_index: maasData.atmo_opacity === 'Sunny' ? 'High' : 'Moderate',
+      atmosphere_opacity: maasData.atmo_opacity || 'Clear'
+    },
+    location: {
+      name: 'Gale Crater (Curiosity REMS - Current Data)',
+      coordinates: {
+        latitude: -5.4,
+        longitude: 137.8
+      }
+    },
+    timestamp: new Date().toISOString()
+  }
+}
+
+// Helper function to convert wind direction to degrees
+const getWindDegrees = (direction: string): number => {
+  const windMap: { [key: string]: number } = {
+    'N': 0, 'NNE': 22.5, 'NE': 45, 'ENE': 67.5,
+    'E': 90, 'ESE': 112.5, 'SE': 135, 'SSE': 157.5,
+    'S': 180, 'SSW': 202.5, 'SW': 225, 'WSW': 247.5,
+    'W': 270, 'WNW': 292.5, 'NW': 315, 'NNW': 337.5
+  }
+  return windMap[direction.toUpperCase()] || 225
+}
+
+// Generate realistic Mars weather simulation based on actual Mars conditions
+const generateRealisticMarsWeather = (): PerseveranceWeatherResponse => {
+  // Calculate current Perseverance Sol (Perseverance landed Feb 18, 2021)
+  const landingDate = new Date('2021-02-18')
+  const currentDate = new Date()
+  const daysSinceLanding = Math.floor((currentDate.getTime() - landingDate.getTime()) / (1000 * 60 * 60 * 24))
+  const currentSol = Math.floor(daysSinceLanding * 1.027) // Mars sol is 1.027 Earth days
+  
+  const currentDateString = currentDate.toISOString().split('T')[0]
+  
+  // Use realistic seasonal variations for Jezero Crater
+  const dayOfYear = currentDate.getDayOfYear()
+  const seasonalTempOffset = Math.sin((dayOfYear / 365) * 2 * Math.PI) * 15 // ±15°C seasonal variation
+  
+  // Realistic Jezero Crater weather patterns
+  const baseTemp = -20 + seasonalTempOffset // Base temperature with seasonal variation
+  const dailyTempVariation = Math.random() * 15 - 7.5 // ±7.5°C daily variation
+  const airTemp = baseTemp + dailyTempVariation
+  const groundTemp = airTemp + Math.random() * 10 + 5 // Ground typically warmer
+  
+  // Realistic pressure variations (Mars atmospheric pressure varies with season)
+  const basePressure = 650 + Math.sin((dayOfYear / 365) * 2 * Math.PI) * 150 // 500-800 Pa seasonal variation
+  const pressure = basePressure + (Math.random() * 50 - 25) // Daily variation
+  
+  // Wind patterns based on Mars meteorology
+  const windSpeed = Math.random() * 20 + 2 // 2-22 m/s (typical Mars winds)
+  const windDirections = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
+  const windDirection = windDirections[Math.floor(Math.random() * windDirections.length)]
+  
+  // Seasonal determination based on current date
+  const seasons = ['Early Spring', 'Late Spring', 'Early Summer', 'Late Summer', 'Early Autumn', 'Late Autumn', 'Early Winter', 'Late Winter']
+  const season = seasons[Math.floor((dayOfYear / 365) * 8)]
+  
+  // Atmospheric opacity varies with dust storms (more likely in certain seasons)
+  const dustStormSeason = dayOfYear > 60 && dayOfYear < 150 // Martian dust storm season
+  const opacityLevels = dustStormSeason 
+    ? ['Clear', 'Slightly Hazy', 'Hazy', 'Hazy', 'Dusty', 'Very Dusty']
+    : ['Clear', 'Clear', 'Clear', 'Slightly Hazy', 'Hazy']
+  const atmosphereOpacity = opacityLevels[Math.floor(Math.random() * opacityLevels.length)]
+  
+  // Calculate sunrise/sunset times (simplified for Jezero Crater)
+  const hourOffset = Math.sin((dayOfYear / 365) * 2 * Math.PI) * 1.5 // Seasonal daylight variation
+  const sunrise = `${String(Math.floor(6.5 - hourOffset)).padStart(2, '0')}:${String(Math.floor((0.5 - hourOffset % 1) * 60)).padStart(2, '0')}`
+  const sunset = `${String(Math.floor(18.5 + hourOffset)).padStart(2, '0')}:${String(Math.floor((0.5 + hourOffset % 1) * 60)).padStart(2, '0')}`
+  
+  const response: PerseveranceWeatherResponse = {
+    latest_sol: currentSol,
+    sol_data: {
+      sol: currentSol,
+      terrestrial_date: currentDateString,
+      temperature: {
+        air: {
+          average: Math.round(airTemp * 10) / 10,
+          minimum: Math.round((airTemp - 8) * 10) / 10,
+          maximum: Math.round((airTemp + 12) * 10) / 10,
+          count: 24
+        },
+        ground: {
+          average: Math.round(groundTemp * 10) / 10,
+          minimum: Math.round((groundTemp - 5) * 10) / 10,
+          maximum: Math.round((groundTemp + 15) * 10) / 10,
+          count: 24
+        }
+      },
+      pressure: {
+        average: Math.round(pressure * 10) / 10,
+        minimum: Math.round((pressure - 30) * 10) / 10,
+        maximum: Math.round((pressure + 30) * 10) / 10,
+        count: 24
+      },
+      wind: {
+        speed: {
+          average: Math.round(windSpeed * 10) / 10,
+          minimum: 0,
+          maximum: Math.round((windSpeed + 8) * 10) / 10,
+          count: 24
+        },
+        direction: {
+          compass_point: windDirection,
+          degrees: windDirections.indexOf(windDirection) * 45
+        }
+      },
+      humidity: {
+        average: Math.round((Math.random() * 50 + 10) * 10) / 10, // Mars humidity is typically low
+        minimum: 0,
+        maximum: Math.round((Math.random() * 80 + 20) * 10) / 10,
+        count: 24
+      },
+      season: season,
+      sunrise: sunrise,
+      sunset: sunset,
+      local_uv_irradiance_index: atmosphereOpacity === 'Clear' ? 'High' : 'Moderate',
+      atmosphere_opacity: atmosphereOpacity
+    },
+    location: {
+      name: 'Jezero Crater (Current Simulated Data)',
+      coordinates: {
+        latitude: 18.4447,
+        longitude: 77.4508
+      }
+    },
+    timestamp: currentDate.toISOString()
+  }
+  
+  return response
+}
+
+// Helper to add getDayOfYear method to Date prototype if not exists
+declare global {
+  interface Date {
+    getDayOfYear(): number
+  }
+}
+
+Date.prototype.getDayOfYear = function() {
+  const start = new Date(this.getFullYear(), 0, 0)
+  const diff = this.getTime() - start.getTime()
+  const oneDay = 1000 * 60 * 60 * 24
+  return Math.floor(diff / oneDay)
 }
 
 // Check NASA API health
@@ -542,4 +906,307 @@ export const getMultiPlanetaryDashboard = async (): Promise<any> => {
     timestamp,
     last_updated: timestamp
   }
+}
+
+// Fetch historic Mars weather data for visualization
+export const fetchHistoricMarsWeatherData = async (): Promise<any> => {
+  try {
+    // Try to get InSight historical weather data
+    const insightData = await fetchInSightWeatherData()
+    
+    if (insightData && insightData.sol_keys && insightData.sol_keys.length > 0) {
+      console.log('Processing InSight historical weather data for visualization')
+      return processInsightDataForCharts(insightData)
+    }
+    
+    // If no real data available, return simulated historical data
+    console.log('Generating simulated historical data for demonstration')
+    return generateHistoricalSimulationData()
+    
+  } catch (error) {
+    console.error('Error fetching historic Mars weather data:', error)
+    // Return simulated data as fallback
+    return generateHistoricalSimulationData()
+  }
+}
+
+// Types for historic weather data
+interface TemperatureDataPoint {
+  sol: number;
+  earth_date: string;
+  min_temp: number | null;
+  max_temp: number | null;
+  avg_temp: number | null;
+  temp_range: number | null;
+  season: string;
+  sample_count: number;
+}
+
+interface PressureDataPoint {
+  sol: number;
+  earth_date: string;
+  pressure: number | null;
+  pressure_min: number | null;
+  pressure_max: number | null;
+  season: string;
+  sample_count: number;
+}
+
+interface WindDataPoint {
+  sol: number;
+  earth_date: string;
+  season: string;
+  wind_speed?: number | null;
+  wind_speed_min?: number | null;
+  wind_speed_max?: number | null;
+  wind_speed_samples?: number;
+  wind_direction?: string | null;
+  wind_direction_degrees?: number | null;
+  wind_direction_samples?: number;
+}
+
+interface AtmosphericCondition {
+  sol: number;
+  earth_date: string;
+  season: string;
+  has_temperature: boolean;
+  has_pressure: boolean;
+  has_wind_speed: boolean;
+  has_wind_direction: boolean;
+  data_quality: number;
+}
+
+interface HistoricWeatherData {
+  mission_info: {
+    name: string;
+    location: string;
+    coordinates: { latitude: number; longitude: number };
+    mission_duration: string;
+    earth_dates: { start: string; end: string };
+    status: string;
+    total_sols: number;
+  };
+  temperature_data: TemperatureDataPoint[];
+  pressure_data: PressureDataPoint[];
+  wind_data: WindDataPoint[];
+  atmospheric_conditions: AtmosphericCondition[];
+}
+
+// Process InSight data into chart-friendly format
+const processInsightDataForCharts = (insightData: any): HistoricWeatherData => {
+  const sols = insightData.sol_keys.map((sol: string) => Number(sol)).sort((a: number, b: number) => a - b)
+  const chartData: HistoricWeatherData = {
+    mission_info: {
+      name: 'InSight Mars Lander',
+      location: 'Elysium Planitia',
+      coordinates: { latitude: 4.5024, longitude: 135.6234 },
+      mission_duration: `Sol ${sols[0]} - Sol ${sols[sols.length - 1]}`,
+      earth_dates: {
+        start: insightData[sols[0]]?.First_UTC?.split('T')[0] || '2018-11-26',
+        end: insightData[sols[sols.length - 1]]?.Last_UTC?.split('T')[0] || '2022-12-15'
+      },
+      status: 'Mission Completed',
+      total_sols: sols.length
+    },
+    temperature_data: [],
+    pressure_data: [],
+    wind_data: [],
+    atmospheric_conditions: []
+  }
+
+  sols.forEach((sol: number) => {
+    const solData = insightData[sol.toString()]
+    if (!solData) return
+
+    const earthDate = solData.First_UTC?.split('T')[0] || ''
+    const season = solData.Season || 'Unknown'
+
+    // Temperature data
+    if (solData.AT) {
+      chartData.temperature_data.push({
+        sol: sol,
+        earth_date: earthDate,
+        min_temp: solData.AT.mn || null,
+        max_temp: solData.AT.mx || null,
+        avg_temp: solData.AT.av || null,
+        temp_range: solData.AT.mx && solData.AT.mn ? solData.AT.mx - solData.AT.mn : null,
+        season: season,
+        sample_count: solData.AT.ct || 0
+      })
+    }
+
+    // Pressure data
+    if (solData.PRE) {
+      chartData.pressure_data.push({
+        sol: sol,
+        earth_date: earthDate,
+        pressure: solData.PRE.av || null,
+        pressure_min: solData.PRE.mn || null,
+        pressure_max: solData.PRE.mx || null,
+        season: season,
+        sample_count: solData.PRE.ct || 0
+      })
+    }
+
+    // Wind data
+    if (solData.HWS || solData.WD) {
+      const windData: WindDataPoint = {
+        sol: sol,
+        earth_date: earthDate,
+        season: season
+      }
+
+      if (solData.HWS) {
+        windData.wind_speed = solData.HWS.av || null
+        windData.wind_speed_min = solData.HWS.mn || null
+        windData.wind_speed_max = solData.HWS.mx || null
+        windData.wind_speed_samples = solData.HWS.ct || 0
+      }
+
+      if (solData.WD && solData.WD.most_common) {
+        windData.wind_direction = solData.WD.most_common.compass_point || null
+        windData.wind_direction_degrees = solData.WD.most_common.compass_degrees || null
+        windData.wind_direction_samples = solData.WD.most_common.ct || 0
+      }
+
+      chartData.wind_data.push(windData)
+    }
+
+    // Atmospheric conditions summary
+    chartData.atmospheric_conditions.push({
+      sol: sol,
+      earth_date: earthDate,
+      season: season,
+      has_temperature: !!solData.AT,
+      has_pressure: !!solData.PRE,
+      has_wind_speed: !!solData.HWS,
+      has_wind_direction: !!solData.WD,
+      data_quality: calculateDataQuality(solData)
+    })
+  })
+
+  return chartData
+}
+
+// Calculate data quality score for a sol
+const calculateDataQuality = (solData: any): number => {
+  let score = 0
+  let total = 0
+
+  if (solData.AT) {
+    score += (solData.AT.ct >= 18 * 24) ? 1 : (solData.AT.ct / (18 * 24))
+    total += 1
+  }
+  if (solData.PRE) {
+    score += (solData.PRE.ct >= 18 * 24) ? 1 : (solData.PRE.ct / (18 * 24))
+    total += 1
+  }
+  if (solData.HWS) {
+    score += (solData.HWS.ct >= 18 * 24) ? 1 : (solData.HWS.ct / (18 * 24))
+    total += 1
+  }
+
+  return total > 0 ? Math.round((score / total) * 100) : 0
+}
+
+// Generate realistic historical simulation data for demonstration
+const generateHistoricalSimulationData = (): HistoricWeatherData => {
+  const startSol = 10
+  const endSol = 800
+  const chartData: HistoricWeatherData = {
+    mission_info: {
+      name: 'Simulated Mars Weather Station',
+      location: 'Elysium Planitia (Simulated)',
+      coordinates: { latitude: 4.5024, longitude: 135.6234 },
+      mission_duration: `Sol ${startSol} - Sol ${endSol}`,
+      earth_dates: {
+        start: '2018-12-06',
+        end: '2021-02-18'
+      },
+      status: 'Simulated Data',
+      total_sols: endSol - startSol
+    },
+    temperature_data: [],
+    pressure_data: [],
+    wind_data: [],
+    atmospheric_conditions: []
+  }
+
+  for (let sol = startSol; sol <= endSol; sol++) {
+    // Create Earth date based on sol
+    const landingDate = new Date('2018-11-26')
+    const earthDate = new Date(landingDate.getTime() + (sol * 24.6 * 60 * 60 * 1000))
+    const earthDateString = earthDate.toISOString().split('T')[0]
+    
+    // Seasonal variation based on sol (Mars year is ~687 sols)
+    const seasonalPhase = (sol / 687) * 2 * Math.PI
+    const seasonalTempOffset = Math.sin(seasonalPhase) * 20 // ±20°C seasonal variation
+    
+    // Daily variation
+    const baseTemp = -50 + seasonalTempOffset
+    const dailyVariation = (Math.random() - 0.5) * 15
+    const avgTemp = baseTemp + dailyVariation
+    const minTemp = avgTemp - 8 - Math.random() * 12
+    const maxTemp = avgTemp + 12 + Math.random() * 15
+    
+    // Pressure with seasonal variation
+    const basePressure = 650 + Math.sin(seasonalPhase + Math.PI/4) * 100
+    const pressure = basePressure + (Math.random() - 0.5) * 50
+    
+    // Wind data
+    const windSpeed = Math.random() * 15 + 2
+    const windDirections = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
+    const windDirection = windDirections[Math.floor(Math.random() * windDirections.length)]
+    
+    // Determine season
+    const seasonIndex = Math.floor(((sol % 687) / 687) * 4)
+    const seasons = ['Northern Spring', 'Northern Summer', 'Northern Autumn', 'Northern Winter']
+    const season = seasons[seasonIndex]
+
+    chartData.temperature_data.push({
+      sol: sol,
+      earth_date: earthDateString,
+      min_temp: Math.round(minTemp * 10) / 10,
+      max_temp: Math.round(maxTemp * 10) / 10,
+      avg_temp: Math.round(avgTemp * 10) / 10,
+      temp_range: Math.round((maxTemp - minTemp) * 10) / 10,
+      season: season,
+      sample_count: 24 * (18 + Math.floor(Math.random() * 6))
+    })
+
+    chartData.pressure_data.push({
+      sol: sol,
+      earth_date: earthDateString,
+      pressure: Math.round(pressure * 10) / 10,
+      pressure_min: Math.round((pressure - 20) * 10) / 10,
+      pressure_max: Math.round((pressure + 20) * 10) / 10,
+      season: season,
+      sample_count: 24 * (18 + Math.floor(Math.random() * 6))
+    })
+
+    chartData.wind_data.push({
+      sol: sol,
+      earth_date: earthDateString,
+      wind_speed: Math.round(windSpeed * 10) / 10,
+      wind_speed_min: 0,
+      wind_speed_max: Math.round((windSpeed + 10) * 10) / 10,
+      wind_direction: windDirection,
+      wind_direction_degrees: windDirections.indexOf(windDirection) * 45,
+      season: season,
+      wind_speed_samples: 24 * (15 + Math.floor(Math.random() * 9))
+    })
+
+    chartData.atmospheric_conditions.push({
+      sol: sol,
+      earth_date: earthDateString,
+      season: season,
+      has_temperature: true,
+      has_pressure: true,
+      has_wind_speed: true,
+      has_wind_direction: true,
+      data_quality: 85 + Math.floor(Math.random() * 15)
+    })
+  }
+
+  return chartData
 } 

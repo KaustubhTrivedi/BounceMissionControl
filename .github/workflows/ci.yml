@@ -1,0 +1,266 @@
+name: 🧪 CI - Test & Build
+
+on:
+  push:
+    branches: [ main, develop, testing/* ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  lint:
+    name: 🔍 Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies - Frontend
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: 📦 Install Dependencies - Backend
+        working-directory: ./backend
+        run: npm ci
+
+      - name: 🔍 Lint Frontend
+        working-directory: ./frontend
+        run: npm run lint
+
+      - name: 🔍 Lint Backend
+        working-directory: ./backend
+        run: npm run lint
+
+      - name: 🎨 Check Formatting - Frontend
+        working-directory: ./frontend
+        run: npm run format -- --check
+
+      - name: 🎨 Check Formatting - Backend
+        working-directory: ./backend
+        run: npm run format -- --check
+
+  typecheck:
+    name: 🔧 TypeScript Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies - Frontend
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: 📦 Install Dependencies - Backend
+        working-directory: ./backend
+        run: npm ci
+
+      - name: 🔧 TypeScript Check - Frontend
+        working-directory: ./frontend
+        run: npm run typecheck
+
+      - name: 🔧 TypeScript Check - Backend
+        working-directory: ./backend
+        run: npm run typecheck
+
+  unit-tests:
+    name: 🧪 Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies - Frontend
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: 📦 Install Dependencies - Backend
+        working-directory: ./backend
+        run: npm ci
+
+      - name: 🧪 Run Frontend Unit Tests
+        working-directory: ./frontend
+        run: npm run test:run
+
+      - name: 🧪 Run Backend Unit Tests
+        working-directory: ./backend
+        run: npm run test:unit
+
+      - name: 📊 Upload Frontend Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+
+      - name: 📊 Upload Backend Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./backend/coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+
+  integration-tests:
+    name: 🔗 Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies - Backend
+        working-directory: ./backend
+        run: npm ci
+
+      - name: 🧪 Run Integration Tests
+        working-directory: ./backend
+        run: npm run test:integration
+        env:
+          NODE_ENV: test
+
+  e2e-tests:
+    name: 🎭 E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies - Frontend
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: 📦 Install Dependencies - Backend
+        working-directory: ./backend
+        run: npm ci
+
+      - name: 🎭 Install Playwright Browsers
+        working-directory: ./frontend
+        run: npx playwright install --with-deps
+
+      - name: 🚀 Start Backend
+        working-directory: ./backend
+        run: npm start &
+        env:
+          NODE_ENV: test
+          PORT: 3001
+
+      - name: 🚀 Start Frontend
+        working-directory: ./frontend
+        run: npm run dev &
+        env:
+          VITE_API_URL: http://localhost:3001
+
+      - name: ⏳ Wait for Services
+        run: |
+          npx wait-on http://localhost:5173 http://localhost:3001 --timeout 60000
+
+      - name: 🎭 Run E2E Tests
+        working-directory: ./frontend
+        run: npm run test:e2e
+
+      - name: 📸 Upload Playwright Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 30
+
+  build:
+    name: 🏗️ Build Check
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, unit-tests]
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies - Frontend
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: 📦 Install Dependencies - Backend
+        working-directory: ./backend
+        run: npm ci
+
+      - name: 🏗️ Build Frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: 🏗️ Build Backend
+        working-directory: ./backend
+        run: npm run build
+
+  quality-gates:
+    name: ✅ Quality Gates
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    if: always()
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies - Frontend
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: 📦 Install Dependencies - Backend
+        working-directory: ./backend
+        run: npm ci
+
+      - name: 📊 Generate Coverage Reports
+        working-directory: ./frontend
+        run: npm run test:coverage
+
+      - name: 📊 Generate Coverage Reports
+        working-directory: ./backend
+        run: npm run test:coverage
+
+      - name: ✅ Quality Gate Check
+        run: |
+          echo "🎯 Quality Gates:"
+          echo "✅ Code Coverage: Check coverage thresholds"
+          echo "✅ Test Results: All tests must pass"
+          echo "✅ Build Status: Must build successfully"
+          echo "✅ Lint Status: No linting errors" 

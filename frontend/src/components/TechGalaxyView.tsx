@@ -29,7 +29,7 @@ export default function TechGalaxyView({
   selectedProject
 }: TechGalaxyViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | null>(null)
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
   const [focusedNode, setFocusedNode] = useState<string | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)

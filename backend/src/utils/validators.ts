@@ -16,6 +16,6 @@ export const isValidSol = (solString: string): boolean => {
 }
 
 // Generic string validation
-export const isNonEmptyString = (value: any): value is string => {
+export const isNonEmptyString = (value: unknown): value is string => {
   return typeof value === 'string' && value.trim().length > 0
 } 

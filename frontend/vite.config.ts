@@ -6,17 +6,19 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [
-    // Please make sure that '@tanstack/router-plugin' is passed before '@vitejs/plugin-react'
-    tanstackRouter({
-      target: 'react',
-      autoCodeSplitting: true,
-    }),
-    react(),
-    tailwindcss(),
-    // ...,
-  ],
+export default defineConfig(({ command, mode }) => {
+  const isTest = mode === 'test' || process.env.NODE_ENV === 'test'
+  
+  return {
+    plugins: [
+      // Only load TanStack Router plugin if not in test mode
+      ...(isTest ? [] : [tanstackRouter({
+        target: 'react',
+        autoCodeSplitting: true,
+      })]),
+      react(),
+      tailwindcss(),
+    ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -28,6 +30,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+    exclude: ['src/test/e2e/**', 'node_modules/**', 'dist/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -51,5 +55,6 @@ export default defineConfig({
         }
       }
     }
+  }
   }
 })

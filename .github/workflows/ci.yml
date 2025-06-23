@@ -52,7 +52,6 @@ jobs:
 
   typecheck:
     name: 🔧 TypeScript Check
-    if: false
     runs-on: self-hosted
     steps:
       - name: 📥 Checkout

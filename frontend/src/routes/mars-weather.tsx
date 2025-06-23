@@ -2,9 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Alert, AlertDescription } from '../components/ui/alert'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar, ScatterChart, Scatter } from 'recharts'
-import { Info, Activity, AlertTriangle, ThermometerSun, Wind, Gauge } from 'lucide-react'
+import { Info, Activity, AlertTriangle, ThermometerSun, Gauge } from 'lucide-react'
 import { useHistoricMarsWeather } from '../hooks/useNASA'
-import type { HistoricWeatherData } from '../services/nasa'
 
 export const Route = createFileRoute('/mars-weather')({
   component: MarsWeatherPage,

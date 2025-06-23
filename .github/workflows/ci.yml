@@ -12,7 +12,6 @@ env:
 jobs:
   lint:
     name: 🔍 Lint & Format Check
-    if: false
     runs-on: self-hosted
     steps:
       - name: 📥 Checkout
@@ -158,6 +157,7 @@ jobs:
 
   e2e-tests:
     name: 🎭 E2E Tests
+    if: false
     runs-on: self-hosted
     container:
       image: mcr.microsoft.com/playwright:v1.42.1-focal

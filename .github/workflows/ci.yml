@@ -155,6 +155,9 @@ jobs:
   e2e-tests:
     name: 🎭 E2E Tests
     runs-on: self-hosted
+    container:
+      image: mcr.microsoft.com/playwright:v1.42.1-focal
+      options: --shm-size=1gb
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -169,10 +172,6 @@ jobs:
       - name: 📦 Install Dependencies - Frontend
         working-directory: ./frontend
         run: npm ci
-
-      - name: 🎭 Install Playwright Browsers
-        working-directory: ./frontend
-        run: npx playwright install --with-deps
 
       - name: 🎭 Run E2E Tests
         working-directory: ./frontend

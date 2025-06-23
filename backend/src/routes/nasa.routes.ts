@@ -8,7 +8,11 @@ import {
   getLatestRoverPhotos,
   getPerseveranceWeatherData,
   getMultiPlanetaryDashboardData,
-  getHistoricMarsWeather
+  getHistoricMarsWeather,
+  getTechPortProjects,
+  getTechPortProject,
+  getTechPortCategoriesEndpoint,
+  getTechPortAnalyticsEndpoint
 } from '../controllers/nasa.controller'
 import { asyncHandler } from '../utils/async-handler'
 
@@ -39,5 +43,11 @@ router.get('/mars-weather', getHistoricMarsWeather)
 
 // Multi-planetary dashboard endpoint
 router.get('/multi-planetary-dashboard', asyncHandler(getMultiPlanetaryDashboardData))
+
+// TechPort API endpoints
+router.get('/techport/projects', asyncHandler(getTechPortProjects))
+router.get('/techport/projects/:projectId', asyncHandler(getTechPortProject))
+router.get('/techport/categories', asyncHandler(getTechPortCategoriesEndpoint))
+router.get('/techport/analytics', asyncHandler(getTechPortAnalyticsEndpoint))
 
 export default router 

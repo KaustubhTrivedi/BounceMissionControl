@@ -235,6 +235,80 @@ export interface HistoricMarsWeatherResponse {
 export const AVAILABLE_ROVERS = ['curiosity', 'opportunity', 'spirit', 'perseverance'] as const
 export type RoverName = typeof AVAILABLE_ROVERS[number]
 
+// TechPort Types
+export interface TechPortProject {
+  id: string
+  title: string
+  description: string
+  status: 'active' | 'completed' | 'planned' | 'cancelled'
+  startDate: string
+  endDate?: string
+  trl: number // Technology Readiness Level (1-9)
+  category: string
+  organization: string
+  location: string
+  budget?: number
+  manager?: string
+  tags: string[]
+  benefits: string[]
+  lastUpdated: string
+}
+
+export interface TechPortProjectsResponse {
+  projects: TechPortProject[]
+  total: number
+  page: number
+  limit: number
+  filteredCount?: number
+  filters?: {
+    category?: string
+    status?: string
+    trl?: string
+  }
+  timestamp: string
+}
+
+export interface TechPortCategory {
+  id: string
+  name: string
+  count: number
+  color: string
+}
+
+export interface TechPortCategoriesResponse {
+  categories: TechPortCategory[]
+  timestamp: string
+}
+
+export interface TechPortAnalytics {
+  overview: {
+    totalProjects: number
+    activeProjects: number
+    completedProjects: number
+    plannedProjects: number
+    totalBudget: number
+    averageTrl: number
+  }
+  trlDistribution: Record<number, number>
+  categoryDistribution: Array<{
+    category: string
+    count: number
+    percentage: number
+  }>
+  organizationDistribution: Array<{
+    org: string
+    count: number
+    percentage: number
+  }>
+  timeline: Array<{
+    year: number
+    started: number
+    completed: number
+    active: number
+  }>
+  timestamp: string
+}
+
 // API endpoints
 const endpoints = {
   apod: '/api/apod',
@@ -246,6 +320,10 @@ const endpoints = {
   perseveranceWeather: '/api/perseverance-weather',
   marsWeather: '/api/mars-weather',
   multiPlanetaryDashboard: '/api/multi-planetary-dashboard',
+  techPortProjects: '/api/techport/projects',
+  techPortProject: (projectId: string) => `/api/techport/projects/${projectId}`,
+  techPortCategories: '/api/techport/categories',
+  techPortAnalytics: '/api/techport/analytics',
 }
 
 // NASA API Service Functions
@@ -310,6 +388,30 @@ export const nasaApi = {
   // Get historic Mars weather data (InSight legacy data)
   getHistoricMarsWeather: async (): Promise<HistoricMarsWeatherResponse> => {
     return api.get<HistoricMarsWeatherResponse>(endpoints.marsWeather)
+  },
+
+  // TechPort API functions
+  getTechPortProjects: async (params: {
+    page?: number
+    limit?: number
+    category?: string
+    status?: string
+    trl?: number
+    updatedSince?: string
+  } = {}): Promise<TechPortProjectsResponse> => {
+    return api.get<TechPortProjectsResponse>(endpoints.techPortProjects, params)
+  },
+
+  getTechPortProject: async (projectId: string): Promise<TechPortProject> => {
+    return api.get<TechPortProject>(endpoints.techPortProject(projectId))
+  },
+
+  getTechPortCategories: async (): Promise<TechPortCategoriesResponse> => {
+    return api.get<TechPortCategoriesResponse>(endpoints.techPortCategories)
+  },
+
+  getTechPortAnalytics: async (): Promise<TechPortAnalytics> => {
+    return api.get<TechPortAnalytics>(endpoints.techPortAnalytics)
   },
 }
 

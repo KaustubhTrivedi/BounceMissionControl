@@ -7,7 +7,7 @@ export const errorHandler: ErrorRequestHandler = (
   error: unknown, 
   req: Request, 
   res: Response, 
-  next: NextFunction
+  _next: NextFunction
 ) => {
   console.error('Global error handler:', error)
   

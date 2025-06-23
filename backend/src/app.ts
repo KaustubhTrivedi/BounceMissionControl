@@ -8,6 +8,7 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler'
 dotenv.config()
 
 // Import configurations
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const appConfig = require('./config/app.config')
 
 // Create Express application

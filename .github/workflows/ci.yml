@@ -12,7 +12,7 @@ env:
 jobs:
   lint:
     name: 🔍 Lint & Format Check
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -52,7 +52,7 @@ jobs:
 
   typecheck:
     name: 🔧 TypeScript Check
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -84,7 +84,7 @@ jobs:
 
   unit-tests:
     name: 🧪 Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -130,7 +130,7 @@ jobs:
 
   integration-tests:
     name: 🔗 Integration Tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -154,7 +154,7 @@ jobs:
 
   e2e-tests:
     name: 🎭 E2E Tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -188,7 +188,7 @@ jobs:
 
   build:
     name: 🏗️ Build Check
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [lint, typecheck, unit-tests]
     steps:
       - name: 📥 Checkout
@@ -221,7 +221,7 @@ jobs:
 
   quality-gates:
     name: ✅ Quality Gates
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [unit-tests, integration-tests]
     if: always()
     steps:

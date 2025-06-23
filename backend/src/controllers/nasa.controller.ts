@@ -13,7 +13,7 @@ import {
   getTechPortAnalytics
 } from '../helpers/nasa-api.helper'
 import { isValidDate, isValidSol, isNonEmptyString } from '../utils/validators'
-import { MarsRoverAPIResponse } from '../models/nasa.models'
+import { MarsRoverAPIResponse, TechPortProject } from '../models/nasa.models'
 import { asyncHandler } from '../utils/async-handler'
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -242,34 +242,31 @@ export const getTechPortProjects = async (req: Request, res: Response) => {
     let filteredProjects = techPortData.projects
 
     if (category) {
-      filteredProjects = filteredProjects.filter((project: any) => 
+      filteredProjects = filteredProjects.filter((project: TechPortProject) => 
         project.category?.toLowerCase().includes((category as string).toLowerCase())
       )
     }
 
     if (status) {
-      filteredProjects = filteredProjects.filter((project: any) => 
+      filteredProjects = filteredProjects.filter((project: TechPortProject) =>
         project.status?.toLowerCase() === (status as string).toLowerCase()
       )
     }
 
     if (trl) {
-      const trlNumber = parseInt(trl as string)
-      filteredProjects = filteredProjects.filter((project: any) => 
-        project.trl === trlNumber
+      filteredProjects = filteredProjects.filter((project: TechPortProject) =>
+        project.trl === parseInt(trl as string)
       )
     }
 
     res.json({
       ...techPortData,
-      projects: filteredProjects,
-      filteredCount: filteredProjects.length,
-      filters: { category, status, trl }
+      projects: filteredProjects
     })
   } catch (error) {
-    console.error('Error fetching TechPort projects:', error)
+    console.error('Error in getTechPortProjects controller:', error)
     res.status(500).json({
-      error: 'Failed to fetch TechPort projects. Data may be temporarily unavailable.',
+      error: 'Failed to fetch or process TechPort projects.',
       timestamp: new Date().toISOString()
     })
   }

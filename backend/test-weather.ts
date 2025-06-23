@@ -1,5 +1,26 @@
 import { fetchPerseveranceWeatherData, fetchHistoricMarsWeatherData } from './src/helpers/nasa-api.helper';
 
+interface TemperatureDataPoint {
+  sol: number;
+  earth_date: string;
+  min_temp: number | null;
+  max_temp: number | null;
+  avg_temp: number | null;
+  temp_range: number | null;
+  season: string;
+  sample_count: number;
+}
+
+interface PressureDataPoint {
+  sol: number;
+  earth_date: string;
+  pressure: number | null;
+  pressure_min: number | null;
+  pressure_max: number | null;
+  season: string;
+  sample_count: number;
+}
+
 async function testWeatherAPI() {
   console.log('Testing Mars Weather APIs...\n');
   
@@ -46,15 +67,15 @@ async function testWeatherAPI() {
     
     if (historicData.temperature_data.length > 0) {
       const tempData = historicData.temperature_data;
-      const minTemp = Math.min(...tempData.map((d: any) => d.min_temp || Infinity));
-      const maxTemp = Math.max(...tempData.map((d: any) => d.max_temp || -Infinity));
+      const minTemp = Math.min(...tempData.map((d: TemperatureDataPoint) => d.min_temp || Infinity));
+      const maxTemp = Math.max(...tempData.map((d: TemperatureDataPoint) => d.max_temp || -Infinity));
       console.log('🌡️  Temperature Range:', `${minTemp}°C to ${maxTemp}°C`);
     }
 
     if (historicData.pressure_data.length > 0) {
       const pressureData = historicData.pressure_data;
-      const minPressure = Math.min(...pressureData.map((d: any) => d.pressure || Infinity));
-      const maxPressure = Math.max(...pressureData.map((d: any) => d.pressure || -Infinity));
+      const minPressure = Math.min(...pressureData.map((d: PressureDataPoint) => d.pressure || Infinity));
+      const maxPressure = Math.max(...pressureData.map((d: PressureDataPoint) => d.pressure || -Infinity));
       console.log('📊 Pressure Range:', `${minPressure} Pa to ${maxPressure} Pa`);
     }
 

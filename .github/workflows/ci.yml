@@ -164,64 +164,19 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: |
-            frontend/package-lock.json
-            backend/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
       - name: 📦 Install Dependencies - Frontend
         working-directory: ./frontend
-        run: npm ci
-
-      - name: 📦 Install Dependencies - Backend
-        working-directory: ./backend
         run: npm ci
 
       - name: 🎭 Install Playwright Browsers
         working-directory: ./frontend
         run: npx playwright install --with-deps
 
-      - name: 🚀 Start Backend
-        working-directory: ./backend
-        run: |
-          npm start &
-          echo $! > backend.pid
-        env:
-          NODE_ENV: test
-          NASA_API_KEY: DEMO_KEY
-
-      - name: 🚀 Start Frontend  
-        working-directory: ./frontend
-        run: |
-          npm run dev -- --host 0.0.0.0 --port 5173 &
-          echo $! > frontend.pid
-        env:
-          VITE_API_BASE_URL: http://localhost:3000
-
-      - name: ⏳ Wait for Services
-        run: |
-          echo "Waiting for backend on port 3000..."
-          npx wait-on http://localhost:3000 --timeout 30000
-          echo "Waiting for frontend on port 5173..."
-          npx wait-on http://localhost:5173 --timeout 30000
-          echo "Both services are ready!"
-
       - name: 🎭 Run E2E Tests
         working-directory: ./frontend
         run: npm run test:e2e
-
-      - name: 🛑 Stop Services
-        if: always()
-        run: |
-          echo "Stopping services..."
-          if [ -f backend/backend.pid ]; then
-            kill $(cat backend/backend.pid) || true
-            rm backend/backend.pid
-          fi
-          if [ -f frontend/frontend.pid ]; then
-            kill $(cat frontend/frontend.pid) || true
-            rm frontend/frontend.pid
-          fi
-          echo "Services stopped"
 
       - name: 📸 Upload Playwright Report
         uses: actions/upload-artifact@v4

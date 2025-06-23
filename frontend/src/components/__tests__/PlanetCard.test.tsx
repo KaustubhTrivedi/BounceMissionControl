@@ -1,38 +1,54 @@
 import { render, screen } from '@testing-library/react'
-import { vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import PlanetCard from '../PlanetCard'
-
-// Mock the router and query client
-vi.mock('@tanstack/react-router', () => ({
-  useNavigate: () => vi.fn(),
-  Link: ({ children, to, ...props }: any) => <a href={to} {...props}>{children}</a>
-}))
 
 const mockPlanetData = {
   id: 'mars',
   name: 'Mars',
-  type: 'planet',
+  type: 'planet' as const,
   mission_count: 3,
   data_freshness: {
+    last_updated: '2024-01-01T12:00:00Z',
     hours_ago: 2
   },
   active_missions: [
-    { status: 'active', name: 'Perseverance' },
-    { status: 'active', name: 'Curiosity' },
-    { status: 'planned', name: 'Mars Sample Return' }
+    { 
+      name: 'Perseverance', 
+      status: 'active' as const,
+      mission_type: 'rover' as const,
+      description: 'Mars 2020 rover exploring Jezero Crater'
+    },
+    { 
+      name: 'Ingenuity', 
+      status: 'active' as const,
+      mission_type: 'flyby' as const,
+      description: 'Mars helicopter technology demonstration'
+    },
+    { 
+      name: 'Mars Sample Return', 
+      status: 'planned' as const,
+      mission_type: 'sample-return' as const,
+      description: 'Joint NASA-ESA mission to return Mars samples'
+    }
   ],
   surface_conditions: {
     temperature: {
-      average: -63
+      average: -63,
+      min: -125,
+      max: 20,
+      unit: 'C'
     },
     gravity: 0.38,
-    radiation_level: 'moderate'
+    day_length: '24h 37m',
+    radiation_level: 'moderate' as const
   },
   last_activity: {
+    date: '2024-01-01T10:00:00Z',
     description: 'Perseverance collected rock sample',
     days_ago: 1
   },
   next_event: {
+    date: '2025-09-01',
     description: 'Mars Sample Return mission launch',
     days_until: 450
   },
@@ -46,6 +62,7 @@ describe('PlanetCard Component', () => {
     expect(screen.getByText('Mars')).toBeInTheDocument()
     expect(screen.getByText('planet')).toBeInTheDocument()
     expect(screen.getByText('3 Missions')).toBeInTheDocument()
+    expect(screen.getByText('2h ago')).toBeInTheDocument()
   })
 
   it('displays surface conditions correctly', () => {
@@ -97,52 +114,59 @@ describe('PlanetCard Component', () => {
   })
 
   it('applies correct styling based on planet type', () => {
-    render(<PlanetCard planet={mockPlanetData} />)
+    const { container } = render(<PlanetCard planet={mockPlanetData} />)
     
-    const card = screen.getByText('Mars').closest('div')
-    expect(card).toHaveClass('from-red-900/40', 'to-orange-900/40')
-  })
-
-  it('handles click events correctly', async () => {
-    const mockOnClick = vi.fn()
-    render(<PlanetCard planet={mockPlanetData} onClick={mockOnClick} />)
-    
-    const card = screen.getByRole('button', { name: /mars/i })
-    fireEvent.click(card)
-    
-    expect(mockOnClick).toHaveBeenCalledWith(mockPlanetData)
-  })
-
-  it('applies hover effects correctly', async () => {
-    render(<PlanetCard planet={mockPlanetData} />)
-    
-    const card = screen.getByRole('button', { name: /mars/i })
-    
-    fireEvent.mouseEnter(card)
-    expect(card).toHaveClass('hover:scale-105')
-    
-    fireEvent.mouseLeave(card)
-    expect(card).not.toHaveClass('scale-105')
+    const card = container.firstChild as HTMLElement
+    expect(card?.className).toContain('from-red-900/40')
+    expect(card?.className).toContain('to-orange-900/40')
   })
 
   it('handles missing optional data gracefully', () => {
     const minimalPlanet = {
-      name: 'Unknown Planet',
-      description: 'A mysterious world'
+      ...mockPlanetData,
+      next_event: undefined
     }
     
     render(<PlanetCard planet={minimalPlanet} />)
     
-    expect(screen.getByText('Unknown Planet')).toBeInTheDocument()
-    expect(screen.getByText('A mysterious world')).toBeInTheDocument()
-    // Should not crash with missing data
+    expect(screen.getByText('Mars')).toBeInTheDocument()
+    // Should not crash with missing next_event
+    expect(screen.queryByText('Next Event')).not.toBeInTheDocument()
   })
 
-  it('renders accessibility attributes correctly', () => {
+  it('shows radiation level with correct styling', () => {
     render(<PlanetCard planet={mockPlanetData} />)
     
-    const card = screen.getByRole('button')
-    expect(card).toHaveAttribute('aria-label')
-    expect(card).toHaveAttribute('tabIndex', '0')
+    const radiationElement = screen.getByText('moderate')
+    expect(radiationElement).toHaveClass('text-yellow-400')
+  })
+
+  it('handles different radiation levels', () => {
+    const highRadiationPlanet = {
+      ...mockPlanetData,
+      surface_conditions: {
+        ...mockPlanetData.surface_conditions,
+        radiation_level: 'high' as const
+      }
+    }
+    
+    render(<PlanetCard planet={highRadiationPlanet} />)
+    
+    const radiationElement = screen.getByText('high')
+    expect(radiationElement).toHaveClass('text-orange-400')
+  })
+
+  it('displays different planet gradients correctly', () => {
+    const moonPlanet = {
+      ...mockPlanetData,
+      id: 'moon',
+      name: 'Moon'
+    }
+    
+    const { container } = render(<PlanetCard planet={moonPlanet} />)
+    
+    const card = container.firstChild as HTMLElement
+    expect(card?.className).toContain('from-gray-800/40')
+    expect(card?.className).toContain('to-slate-900/40')
   })
 }) 

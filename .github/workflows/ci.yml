@@ -13,7 +13,6 @@ jobs:
   lint:
     name: 🔍 Lint & Format Check
     runs-on: self-hosted
-    if: false
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -54,7 +53,6 @@ jobs:
   typecheck:
     name: 🔧 TypeScript Check
     runs-on: self-hosted
-    if: false
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -87,7 +85,6 @@ jobs:
   unit-tests:
     name: 🧪 Unit Tests
     runs-on: self-hosted
-    if: false
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4

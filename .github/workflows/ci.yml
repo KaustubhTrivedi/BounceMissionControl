@@ -84,7 +84,6 @@ jobs:
 
   unit-tests:
     name: 🧪 Unit Tests
-    if: false
     runs-on: self-hosted
     steps:
       - name: 📥 Checkout

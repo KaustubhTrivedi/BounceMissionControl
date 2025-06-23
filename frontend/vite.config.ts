@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 // https://vitejs.dev/config/
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ command: _command, mode }) => {
   const isTest = mode === 'test' || process.env.NODE_ENV === 'test'
   
   return {

@@ -22,6 +22,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
 
       - name: 📦 Install Dependencies - Frontend
         working-directory: ./frontend
@@ -59,6 +62,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
 
       - name: 📦 Install Dependencies - Frontend
         working-directory: ./frontend
@@ -88,6 +94,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
 
       - name: 📦 Install Dependencies - Frontend
         working-directory: ./frontend
@@ -131,6 +140,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
       - name: 📦 Install Dependencies - Backend
         working-directory: ./backend
@@ -154,6 +164,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
 
       - name: 📦 Install Dependencies - Frontend
         working-directory: ./frontend
@@ -189,7 +202,7 @@ jobs:
         run: npm run test:e2e
 
       - name: 📸 Upload Playwright Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
@@ -209,6 +222,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
 
       - name: 📦 Install Dependencies - Frontend
         working-directory: ./frontend
@@ -240,6 +256,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
 
       - name: 📦 Install Dependencies - Frontend
         working-directory: ./frontend

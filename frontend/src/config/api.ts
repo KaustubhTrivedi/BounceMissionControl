@@ -27,8 +27,8 @@ export const apiConfig = {
 
 // API Endpoints
 export const endpoints = {
-  apod: `${API_BASE_URL}/apod`,
-  marsPhotos: `${API_BASE_URL}/mars-photos`,
+  apod: `${API_BASE_URL}/api/apod`,
+  marsPhotos: `${API_BASE_URL}/api/mars-photos`,
   // Add more endpoints as needed
 } as const
 

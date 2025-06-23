@@ -5,10 +5,12 @@ import {
   fetchRoverManifest, 
   getMostActiveRover,
   fetchPerseveranceWeatherData,
+  fetchHistoricMarsWeatherData,
   getMultiPlanetaryDashboard
 } from '../helpers/nasa-api.helper'
 import { isValidDate, isValidSol, isNonEmptyString } from '../utils/validators'
 import { MarsRoverAPIResponse } from '../models/nasa.models'
+import { asyncHandler } from '../utils/async-handler'
 
 const nasaConfig = require('../config/nasa.config')
 
@@ -181,6 +183,20 @@ export const getPerseveranceWeatherData = async (req: Request, res: Response) =>
   }
 }
 
+// Get Mars weather data (alias for Perseverance weather)
+export const getMarsWeather = async (req: Request, res: Response) => {
+  try {
+    const weatherData = await fetchPerseveranceWeatherData()
+    res.json(weatherData)
+  } catch (error) {
+    console.error('Error fetching Mars weather data:', error)
+    res.status(500).json({
+      error: 'Failed to fetch Mars weather data. Data may be temporarily unavailable.',
+      timestamp: new Date().toISOString()
+    })
+  }
+}
+
 // Get multi-planetary dashboard data
 export const getMultiPlanetaryDashboardData = async (req: Request, res: Response) => {
   try {
@@ -193,4 +209,15 @@ export const getMultiPlanetaryDashboardData = async (req: Request, res: Response
       timestamp: new Date().toISOString()
     })
   }
-} 
+}
+
+// Get historic Mars weather data for visualization
+export const getHistoricMarsWeather = asyncHandler(async (req: Request, res: Response) => {
+  const historicData = await fetchHistoricMarsWeatherData()
+  
+  res.status(200).json({
+    success: true,
+    data: historicData,
+    message: 'Historic Mars weather data retrieved successfully'
+  })
+}) 

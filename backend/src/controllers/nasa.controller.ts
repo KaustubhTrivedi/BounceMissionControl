@@ -6,7 +6,11 @@ import {
   getMostActiveRover,
   fetchPerseveranceWeatherData,
   fetchHistoricMarsWeatherData,
-  getMultiPlanetaryDashboard
+  getMultiPlanetaryDashboard,
+  fetchTechPortProjects,
+  fetchTechPortProject,
+  getTechPortCategories,
+  getTechPortAnalytics
 } from '../helpers/nasa-api.helper'
 import { isValidDate, isValidSol, isNonEmptyString } from '../utils/validators'
 import { MarsRoverAPIResponse } from '../models/nasa.models'
@@ -220,4 +224,100 @@ export const getHistoricMarsWeather = asyncHandler(async (req: Request, res: Res
     data: historicData,
     message: 'Historic Mars weather data retrieved successfully'
   })
-}) 
+})
+
+// TechPort Controllers
+export const getTechPortProjects = async (req: Request, res: Response) => {
+  const { page, limit, updatedSince, category, status, trl } = req.query
+
+  try {
+    const techPortData = await fetchTechPortProjects({
+      page: page ? parseInt(page as string) : 1,
+      limit: limit ? parseInt(limit as string) : 100,
+      updatedSince: updatedSince as string
+    })
+
+    // Apply client-side filtering since TechPort API might be limited
+    let filteredProjects = techPortData.projects
+
+    if (category) {
+      filteredProjects = filteredProjects.filter((project: any) => 
+        project.category?.toLowerCase().includes((category as string).toLowerCase())
+      )
+    }
+
+    if (status) {
+      filteredProjects = filteredProjects.filter((project: any) => 
+        project.status?.toLowerCase() === (status as string).toLowerCase()
+      )
+    }
+
+    if (trl) {
+      const trlNumber = parseInt(trl as string)
+      filteredProjects = filteredProjects.filter((project: any) => 
+        project.trl === trlNumber
+      )
+    }
+
+    res.json({
+      ...techPortData,
+      projects: filteredProjects,
+      filteredCount: filteredProjects.length,
+      filters: { category, status, trl }
+    })
+  } catch (error) {
+    console.error('Error fetching TechPort projects:', error)
+    res.status(500).json({
+      error: 'Failed to fetch TechPort projects. Data may be temporarily unavailable.',
+      timestamp: new Date().toISOString()
+    })
+  }
+}
+
+export const getTechPortProject = async (req: Request, res: Response) => {
+  const { projectId } = req.params
+
+  if (!projectId) {
+    return res.status(400).json({
+      error: 'Project ID is required',
+      timestamp: new Date().toISOString()
+    })
+  }
+
+  try {
+    const projectData = await fetchTechPortProject(projectId)
+    res.json(projectData)
+  } catch (error) {
+    console.error(`Error fetching TechPort project ${projectId}:`, error)
+    res.status(404).json({
+      error: `TechPort project ${projectId} not found or unavailable.`,
+      timestamp: new Date().toISOString()
+    })
+  }
+}
+
+export const getTechPortCategoriesEndpoint = async (req: Request, res: Response) => {
+  try {
+    const categoriesData = await getTechPortCategories()
+    res.json(categoriesData)
+  } catch (error) {
+    console.error('Error fetching TechPort categories:', error)
+    res.status(500).json({
+      error: 'Failed to fetch TechPort categories. Data may be temporarily unavailable.',
+      timestamp: new Date().toISOString()
+    })
+  }
+}
+
+export const getTechPortAnalyticsEndpoint = async (req: Request, res: Response) => {
+  try {
+    const analyticsData = await getTechPortAnalytics()
+    res.json(analyticsData)
+  } catch (error) {
+    console.error('Error fetching TechPort analytics:', error)
+    res.status(500).json({
+      error: 'Failed to fetch TechPort analytics. Data may be temporarily unavailable.',
+      timestamp: new Date().toISOString()
+    })
+  }
+} 

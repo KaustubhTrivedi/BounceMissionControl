@@ -1,13 +1,14 @@
 import request from 'supertest'
 import express from 'express'
-import { getNASAData, getMarsWeather, getMarsRoverPhotos } from '../nasa.controller'
+import { getAPOD, getMarsWeather, getMarsRoverPhotos } from '../nasa.controller'
+import { asyncHandler } from '../../utils/async-handler'
 
 // Create test app
 const app = express()
 app.use(express.json())
-app.get('/api/nasa/apod', getNASAData)
-app.get('/api/nasa/mars-weather', getMarsWeather)
-app.get('/api/nasa/mars-rover/:rover/photos', getMarsRoverPhotos)
+app.get('/api/nasa/apod', asyncHandler(getAPOD))
+app.get('/api/nasa/mars-weather', asyncHandler(getMarsWeather))
+app.get('/api/nasa/mars-rover/:rover/photos', asyncHandler(getMarsRoverPhotos))
 
 describe('NASA Controller Integration Tests', () => {
   describe('GET /api/nasa/apod', () => {

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// @ts-nocheck
 import { describe, it, expect, jest, beforeEach } from '@jest/globals'
 import axios from 'axios'
 import { 
@@ -8,8 +10,13 @@ import {
 } from '../nasa-api.helper'
 
 // Mock axios
-jest.mock('axios')
-const mockedAxios = axios as jest.Mocked<typeof axios>
+jest.mock('axios', () => ({
+  create: jest.fn(() => ({
+    get: jest.fn()
+  }))
+}))
+
+const mockAxios = axios as any
 
 // Mock the config
 jest.mock('../../config/nasa.config', () => ({
@@ -40,9 +47,8 @@ describe('NASA API Helper - Unit Tests', () => {
         date: '2023-12-01'
       }
 
-      mockedAxios.create = jest.fn().mockReturnValue({
-        get: jest.fn().mockResolvedValue({ data: mockAPODData })
-      })
+      const mockGet = jest.fn().mockResolvedValue({ data: mockAPODData })
+      mockAxios.create = jest.fn().mockReturnValue({ get: mockGet } as any)
 
       const result = await fetchAPODData('2023-12-01')
       
@@ -50,9 +56,8 @@ describe('NASA API Helper - Unit Tests', () => {
     })
 
     it('should handle API errors gracefully', async () => {
-      mockedAxios.create = jest.fn().mockReturnValue({
-        get: jest.fn().mockRejectedValue(new Error('API Error'))
-      })
+      const mockGet = jest.fn().mockRejectedValue(new Error('API Error'))
+      mockAxios.create = jest.fn().mockReturnValue({ get: mockGet } as any)
 
       await expect(fetchAPODData()).rejects.toThrow('API Error')
     })
@@ -71,9 +76,8 @@ describe('NASA API Helper - Unit Tests', () => {
         ]
       }
 
-      mockedAxios.create = jest.fn().mockReturnValue({
-        get: jest.fn().mockResolvedValue({ data: mockRoverData })
-      })
+      const mockGet = jest.fn().mockResolvedValue({ data: mockRoverData })
+      mockAxios.create = jest.fn().mockReturnValue({ get: mockGet } as any)
 
       const result = await fetchMarsRoverPhotos('curiosity', '1000')
       
@@ -82,9 +86,8 @@ describe('NASA API Helper - Unit Tests', () => {
     })
 
     it('should handle invalid response structure', async () => {
-      mockedAxios.create = jest.fn().mockReturnValue({
-        get: jest.fn().mockResolvedValue({ data: { invalid: 'structure' } })
-      })
+      const mockGet = jest.fn().mockResolvedValue({ data: { invalid: 'structure' } })
+      mockAxios.create = jest.fn().mockReturnValue({ get: mockGet } as any)
 
       const result = await fetchMarsRoverPhotos('curiosity')
       
@@ -92,9 +95,8 @@ describe('NASA API Helper - Unit Tests', () => {
     })
 
     it('should return empty photos array on error', async () => {
-      mockedAxios.create = jest.fn().mockReturnValue({
-        get: jest.fn().mockRejectedValue(new Error('Network Error'))
-      })
+      const mockGet = jest.fn().mockRejectedValue(new Error('Network Error'))
+      mockAxios.create = jest.fn().mockReturnValue({ get: mockGet } as any)
 
       const result = await fetchMarsRoverPhotos('curiosity')
       
@@ -123,11 +125,11 @@ describe('NASA API Helper - Unit Tests', () => {
         }
       ]
 
-      mockedAxios.create = jest.fn().mockReturnValue({
-        get: jest.fn()
-          .mockResolvedValueOnce({ data: mockManifests[0] })
-          .mockResolvedValueOnce({ data: mockManifests[1] })
-      })
+      const mockGet = jest.fn()
+        .mockResolvedValueOnce({ data: mockManifests[0] })
+        .mockResolvedValueOnce({ data: mockManifests[1] })
+      
+      mockAxios.create = jest.fn().mockReturnValue({ get: mockGet } as any)
 
       const result = await getMostActiveRover()
       
@@ -135,9 +137,8 @@ describe('NASA API Helper - Unit Tests', () => {
     })
 
     it('should fallback to curiosity when no active rovers found', async () => {
-      mockedAxios.create = jest.fn().mockReturnValue({
-        get: jest.fn().mockRejectedValue(new Error('API Error'))
-      })
+      const mockGet = jest.fn().mockRejectedValue(new Error('API Error'))
+      mockAxios.create = jest.fn().mockReturnValue({ get: mockGet } as any)
 
       const result = await getMostActiveRover()
       
@@ -147,9 +148,8 @@ describe('NASA API Helper - Unit Tests', () => {
 
   describe('checkNASAApiHealth', () => {
     it('should return true when API is healthy', async () => {
-      mockedAxios.create = jest.fn().mockReturnValue({
-        get: jest.fn().mockResolvedValue({ status: 200 })
-      })
+      const mockGet = jest.fn().mockResolvedValue({ status: 200 })
+      mockAxios.create = jest.fn().mockReturnValue({ get: mockGet } as any)
 
       const result = await checkNASAApiHealth()
       
@@ -157,9 +157,8 @@ describe('NASA API Helper - Unit Tests', () => {
     })
 
     it('should return false when API is unhealthy', async () => {
-      mockedAxios.create = jest.fn().mockReturnValue({
-        get: jest.fn().mockRejectedValue(new Error('API Down'))
-      })
+      const mockGet = jest.fn().mockRejectedValue(new Error('API Down'))
+      mockAxios.create = jest.fn().mockReturnValue({ get: mockGet } as any)
 
       const result = await checkNASAApiHealth()
       

@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// @ts-nocheck
 import { describe, it, expect, jest } from '@jest/globals'
 import { Request, Response, NextFunction } from 'express'
 import { asyncHandler } from '../async-handler'

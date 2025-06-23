@@ -1,5 +1,19 @@
+// This is a helper file for NASA API calls.
 import axios from 'axios'
-import { APODResponse, MarsRoverResponse, PerseveranceWeatherResponse } from '../models/nasa.models'
+import {
+  APODResponse,
+  HistoricWeatherData,
+  InSightWeatherData,
+  MarsRoverResponse,
+  MultiPlanetDashboardResponse,
+  PerseveranceWeatherResponse,
+  PlanetData,
+  RoverManifest,
+  TechPortResponse,
+  InSightSolData,
+  MSLWeatherData,
+  MAASWeatherData
+} from '../models/nasa.models'
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const nasaConfig = require('../config/nasa.config')
@@ -15,7 +29,7 @@ const nasaApiClient = axios.create({
 
 // Fetch APOD data
 export const fetchAPODData = async (date?: string): Promise<APODResponse> => {
-  const params: any = {}
+  const params: { date?: string } = {}
   if (date) {
     params.date = date
   }
@@ -35,7 +49,7 @@ export const fetchMarsRoverPhotos = async (
 ): Promise<MarsRoverResponse> => {
   try {
     let endpoint = `${nasaConfig.endpoints.marsRover}/${rover}/photos`
-    const params: any = {}
+    const params: { sol?: string } = {}
 
     if (sol) {
       params.sol = sol
@@ -61,9 +75,11 @@ export const fetchMarsRoverPhotos = async (
 }
 
 // Fetch rover manifest (contains mission info and latest sol)
-export const fetchRoverManifest = async (rover: string): Promise<any> => {
+export const fetchRoverManifest = async (
+  rover: string
+): Promise<RoverManifest> => {
   const endpoint = `${nasaConfig.endpoints.marsRoverManifest}/${rover}`
-  const response = await nasaApiClient.get(endpoint)
+  const response = await nasaApiClient.get<RoverManifest>(endpoint)
   return response.data
 }
 
@@ -84,7 +100,16 @@ export const getMostActiveRover = async (): Promise<string> => {
 
     // Filter successful responses and active rovers
     const activeRovers = manifests
-      .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
+      .filter(
+        (
+          result
+        ): result is PromiseFulfilledResult<{
+          rover: string
+          maxSol: number
+          maxDate: string
+          status: string
+        }> => result.status === 'fulfilled'
+      )
       .map(result => result.value)
       .filter(rover => rover.status === 'active')
 
@@ -93,7 +118,7 @@ export const getMostActiveRover = async (): Promise<string> => {
     }
 
     // Return the rover with the most recent activity
-    const mostActive = activeRovers.reduce((prev, current) => 
+    const mostActive = activeRovers.reduce((prev, current) =>
       new Date(current.maxDate) > new Date(prev.maxDate) ? current : prev
     )
 
@@ -140,18 +165,18 @@ export const fetchPerseveranceWeatherData = async (): Promise<PerseveranceWeathe
 }
 
 // Check if weather data is recent (within 1 year)
-const isDataRecent = (data: any): boolean => {
+const isDataRecent = (data: unknown): boolean => {
   try {
     let dataDate: Date | null = null
     
     // For MAAS data
-    if (data.terrestrial_date) {
+    if (data && typeof data === 'object' && 'terrestrial_date' in data && typeof data.terrestrial_date === 'string') {
       dataDate = new Date(data.terrestrial_date)
     }
     // For InSight data
-    else if (data.sol_keys && data.sol_keys.length > 0) {
+    else if (data && typeof data === 'object' && 'sol_keys' in data && Array.isArray(data.sol_keys) && data.sol_keys.length > 0) {
       const latestSol = data.sol_keys[data.sol_keys.length - 1]
-      const solData = data[latestSol]
+      const solData = (data as InSightWeatherData)[latestSol] as InSightSolData
       if (solData.First_UTC) {
         dataDate = new Date(solData.First_UTC)
       }
@@ -173,14 +198,17 @@ const isDataRecent = (data: any): boolean => {
 }
 
 // Fetch InSight weather data (historical)
-const fetchInSightWeatherData = async (): Promise<any> => {
+const fetchInSightWeatherData = async (): Promise<InSightWeatherData | null> => {
   try {
-    const response = await nasaApiClient.get(nasaConfig.endpoints.insightWeather, {
-      params: {
-        feedtype: 'json',
-        ver: '1.0'
+    const response = await nasaApiClient.get<InSightWeatherData>(
+      nasaConfig.endpoints.insightWeather,
+      {
+        params: {
+          feedtype: 'json',
+          ver: '1.0'
+        }
       }
-    })
+    )
     return response.data
   } catch (error) {
     console.warn('InSight weather data not available:', error)
@@ -189,9 +217,9 @@ const fetchInSightWeatherData = async (): Promise<any> => {
 }
 
 // Fetch MSL (Curiosity) weather data
-const fetchMSLWeatherData = async (): Promise<any> => {
+const fetchMSLWeatherData = async (): Promise<MSLWeatherData | null> => {
   try {
-    const response = await axios.get(nasaConfig.endpoints.marsWeatherService, {
+    const response = await axios.get<MSLWeatherData>(nasaConfig.endpoints.marsWeatherService, {
       timeout: nasaConfig.timeout
     })
     return response.data
@@ -202,9 +230,9 @@ const fetchMSLWeatherData = async (): Promise<any> => {
 }
 
 // Fetch MAAS weather data (current Curiosity REMS data)
-const fetchMAASWeatherData = async (): Promise<any> => {
+const fetchMAASWeatherData = async (): Promise<MAASWeatherData | null> => {
   try {
-    const response = await axios.get(nasaConfig.endpoints.maasWeather, {
+    const response = await axios.get<MAASWeatherData>(nasaConfig.endpoints.maasWeather, {
       timeout: nasaConfig.timeout
     })
     return response.data
@@ -215,9 +243,13 @@ const fetchMAASWeatherData = async (): Promise<any> => {
 }
 
 // Convert InSight data to Perseverance format
-const convertInSightToPerseveranceFormat = (insightData: any): PerseveranceWeatherResponse => {
-  const currentSol = Math.max(...insightData.sol_keys.map((sol: string) => parseInt(sol)))
-  const solData = insightData[currentSol.toString()]
+const convertInSightToPerseveranceFormat = (
+  insightData: InSightWeatherData
+): PerseveranceWeatherResponse => {
+  const currentSol = Math.max(
+    ...insightData.sol_keys.map((sol: string) => parseInt(sol))
+  )
+  const solData = insightData[currentSol.toString()] as InSightSolData
   
   return {
     latest_sol: currentSol,
@@ -280,7 +312,9 @@ const convertInSightToPerseveranceFormat = (insightData: any): PerseveranceWeath
 }
 
 // Convert MSL data to Perseverance format
-const convertMSLToPerseveranceFormat = (mslData: any): PerseveranceWeatherResponse => {
+const convertMSLToPerseveranceFormat = (
+  mslData: MSLWeatherData
+): PerseveranceWeatherResponse => {
   const currentSol = mslData.sol || Math.floor(Math.random() * 100) + 3000
   
   return {
@@ -296,9 +330,9 @@ const convertMSLToPerseveranceFormat = (mslData: any): PerseveranceWeatherRespon
           count: 24
         },
         ground: {
-          average: mslData.min_gts_temp ? (mslData.min_gts_temp + mslData.max_gts_temp) / 2 : -40,
-          minimum: mslData.min_gts_temp || -60,
-          maximum: mslData.max_gts_temp || -20,
+          average: mslData.min_temp ? (mslData.min_temp + mslData.max_temp) / 2 : -40,
+          minimum: mslData.min_temp || -60,
+          maximum: mslData.max_temp || -20,
           count: 24
         }
       },
@@ -344,13 +378,15 @@ const convertMSLToPerseveranceFormat = (mslData: any): PerseveranceWeatherRespon
 }
 
 // Convert MAAS data to Perseverance format
-const convertMAASToPersevaeranceFormat = (maasData: any): PerseveranceWeatherResponse => {
+const convertMAASToPersevaeranceFormat = (
+  maasData: MAASWeatherData
+): PerseveranceWeatherResponse => {
   const currentSol = maasData.sol || 0
   const terrestrialDate = maasData.terrestrial_date || new Date().toISOString().split('T')[0]
   
   // Convert temperatures from Celsius to match our format
-  const minTemp = maasData.min_temp || -70
-  const maxTemp = maasData.max_temp || -30
+  const minTemp = maasData.min_gts_temp || -70
+  const maxTemp = maasData.max_gts_temp || -30
   const avgTemp = (minTemp + maxTemp) / 2
   
   // Convert pressure from hPa to Pa (MAAS uses different units)
@@ -556,26 +592,22 @@ Date.prototype.getDayOfYear = function() {
 // Check NASA API health
 export const checkNASAApiHealth = async (): Promise<boolean> => {
   try {
-    await nasaApiClient.get(nasaConfig.endpoints.apod, {
-      timeout: 5000,
-      params: { date: '2024-01-01' } // Use a specific date for health check
-    })
-    return true
+    const response = await nasaApiClient.get(nasaConfig.endpoints.apod)
+    return response.status === 200
   } catch (error) {
-    console.error('NASA API health check failed:', error)
     return false
   }
 }
 
 // Multi-Planetary Dashboard Data Generator
-export const getMultiPlanetaryDashboard = async (): Promise<any> => {
+export const getMultiPlanetaryDashboard = async (): Promise<MultiPlanetDashboardResponse> => {
   const currentDate = new Date()
   const timestamp = currentDate.toISOString()
   
   // Calculate days difference
   const daysDiff = (date1: Date, date2: Date) => Math.floor((date1.getTime() - date2.getTime()) / (1000 * 60 * 60 * 24))
   
-  const planetsData = [
+  const planetsData: PlanetData[] = [
     {
       id: 'mars',
       name: 'Mars',
@@ -641,11 +673,12 @@ export const getMultiPlanetaryDashboard = async (): Promise<any> => {
         description: 'Sample Return Mission launch window',
         days_until: daysDiff(new Date('2025-07-15'), currentDate)
       },
-      notable_fact: 'Mars has the largest volcano in the solar system: Olympus Mons',
+      notable_fact: 'Mars has the largest dust storms in the solar system, which can cover the entire planet.',
       data_freshness: {
         last_updated: timestamp,
         hours_ago: 0
-      }
+      },
+      image_url: 'https://science.nasa.gov/wp-content/uploads/2023/10/pia26099-marssimulatedcolor-jpeg.webp'
     },
     {
       id: 'moon',
@@ -789,11 +822,12 @@ export const getMultiPlanetaryDashboard = async (): Promise<any> => {
         description: 'Europa Clipper arrives at Jupiter system',
         days_until: daysDiff(new Date('2030-04-11'), currentDate)
       },
-      notable_fact: 'Europa may contain twice as much water as all Earth\'s oceans',
+      notable_fact: "Europa's subsurface ocean may contain more than twice the amount of water of all of Earth's oceans.",
       data_freshness: {
         last_updated: timestamp,
         hours_ago: 0
-      }
+      },
+      image_url: 'https://science.nasa.gov/wp-content/uploads/2023/11/europa-5-jpeg.webp'
     },
     {
       id: 'titan',
@@ -836,11 +870,12 @@ export const getMultiPlanetaryDashboard = async (): Promise<any> => {
         description: 'Dragonfly launch',
         days_until: daysDiff(new Date('2028-07-01'), currentDate)
       },
-      notable_fact: 'Titan has lakes and rivers of liquid methane and ethane',
+      notable_fact: 'Titan is the only moon known to have a dense atmosphere and the only celestial body other than Earth with clear evidence of stable bodies of surface liquid.',
       data_freshness: {
         last_updated: timestamp,
         hours_ago: 0
-      }
+      },
+      image_url: 'https://science.nasa.gov/wp-content/uploads/2023/08/titan-color-2023.png'
     },
     {
       id: 'asteroid-belt',
@@ -894,144 +929,127 @@ export const getMultiPlanetaryDashboard = async (): Promise<any> => {
         last_updated: timestamp,
         hours_ago: 0
       }
+    },
+    {
+      id: 'bennu',
+      name: 'Bennu',
+      type: 'asteroid',
+      active_missions: [
+        {
+          name: 'OSIRIS-REx Sample Analysis',
+          status: 'active',
+          launch_date: '2016-09-08',
+          arrival_date: '2023-09-24',
+          mission_type: 'sample-return',
+          description: 'Analyzing samples from asteroid Bennu'
+        }
+      ],
+      mission_count: 1,
+      surface_conditions: {
+        temperature: {
+          average: -73,
+          min: -143,
+          max: -3,
+          unit: '°C'
+        },
+        atmosphere: {
+          composition: 'No atmosphere'
+        },
+        gravity: 0.00001,
+        day_length: 'Varies by asteroid',
+        radiation_level: 'high'
+      },
+      last_activity: {
+        date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        description: 'OSIRIS-REx sample analysis reveals new findings',
+        days_ago: 14
+      },
+      next_event: {
+        date: '2025-10-01',
+        description: 'Next asteroid sample return mission planning',
+        days_until: daysDiff(new Date('2025-10-01'), currentDate)
+      },
+      notable_fact: 'Samples returned from Bennu by OSIRIS-REx contain abundant water and carbon, key ingredients for life.',
+      data_freshness: {
+        last_updated: timestamp,
+        hours_ago: 0
+      },
+      image_url: 'https://solarsystem.nasa.gov/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBb3djIiwiZXhwIjpudWxsLCJwdXIiOiJibG9iX2lkIn19--4ea1c8b74289873a64b9af87823e51f8a29a4b3e/bennu_1600.jpg'
     }
   ]
 
-  const totalActiveMissions = planetsData.reduce((total, planet) => 
-    total + planet.active_missions.filter(mission => mission.status === 'active').length, 0
+  const total_active_missions = planetsData.reduce(
+    (acc, p) => acc + p.active_missions.length,
+    0
   )
 
   return {
     planets: planetsData,
-    total_active_missions: totalActiveMissions,
+    total_active_missions,
     timestamp,
     last_updated: timestamp
   }
 }
 
-// Fetch historic Mars weather data for visualization
-export const fetchHistoricMarsWeatherData = async (): Promise<any> => {
+// Historic Mars Weather Data Aggregator
+// This function attempts to fetch from InSight first, then falls back to a realistic simulation.
+export const fetchHistoricMarsWeatherData = async (): Promise<HistoricWeatherData> => {
   try {
-    // Try to get InSight historical weather data
     const insightData = await fetchInSightWeatherData()
-    
-    if (insightData && insightData.sol_keys && insightData.sol_keys.length > 0) {
-      console.log('Processing InSight historical weather data for visualization')
+    if (insightData) {
+      console.log('Processing historic data from InSight mission...')
       return processInsightDataForCharts(insightData)
     }
-    
-    // If no real data available, return simulated historical data
-    console.log('Generating simulated historical data for demonstration')
-    return generateHistoricalSimulationData()
-    
   } catch (error) {
-    console.error('Error fetching historic Mars weather data:', error)
-    // Return simulated data as fallback
-    return generateHistoricalSimulationData()
+    console.warn(
+      'Could not fetch or process InSight historic data, falling back to simulation.',
+      error
+    )
   }
+
+  console.log('Generating simulated historic Mars weather data...')
+  return generateHistoricalSimulationData()
 }
 
-// Types for historic weather data
-interface TemperatureDataPoint {
-  sol: number;
-  earth_date: string;
-  min_temp: number | null;
-  max_temp: number | null;
-  avg_temp: number | null;
-  temp_range: number | null;
-  season: string;
-  sample_count: number;
-}
-
-interface PressureDataPoint {
-  sol: number;
-  earth_date: string;
-  pressure: number | null;
-  pressure_min: number | null;
-  pressure_max: number | null;
-  season: string;
-  sample_count: number;
-}
-
-interface WindDataPoint {
-  sol: number;
-  earth_date: string;
-  season: string;
-  wind_speed?: number | null;
-  wind_speed_min?: number | null;
-  wind_speed_max?: number | null;
-  wind_speed_samples?: number;
-  wind_direction?: string | null;
-  wind_direction_degrees?: number | null;
-  wind_direction_samples?: number;
-}
-
-interface AtmosphericCondition {
-  sol: number;
-  earth_date: string;
-  season: string;
-  has_temperature: boolean;
-  has_pressure: boolean;
-  has_wind_speed: boolean;
-  has_wind_direction: boolean;
-  data_quality: number;
-}
-
-interface HistoricWeatherData {
-  mission_info: {
-    name: string;
-    location: string;
-    coordinates: { latitude: number; longitude: number };
-    mission_duration: string;
-    earth_dates: { start: string; end: string };
-    status: string;
-    total_sols: number;
-  };
-  temperature_data: TemperatureDataPoint[];
-  pressure_data: PressureDataPoint[];
-  wind_data: WindDataPoint[];
-  atmospheric_conditions: AtmosphericCondition[];
-}
-
-// Process InSight data into chart-friendly format
-const processInsightDataForCharts = (insightData: any): HistoricWeatherData => {
-  const sols = insightData.sol_keys.map((sol: string) => Number(sol)).sort((a: number, b: number) => a - b)
-  const chartData: HistoricWeatherData = {
-    mission_info: {
-      name: 'InSight Mars Lander',
-      location: 'Elysium Planitia',
-      coordinates: { latitude: 4.5024, longitude: 135.6234 },
-      mission_duration: `Sol ${sols[0]} - Sol ${sols[sols.length - 1]}`,
-      earth_dates: {
-        start: insightData[sols[0]]?.First_UTC?.split('T')[0] || '2018-11-26',
-        end: insightData[sols[sols.length - 1]]?.Last_UTC?.split('T')[0] || '2022-12-15'
-      },
-      status: 'Mission Completed',
-      total_sols: sols.length
+const processInsightDataForCharts = (
+  insightData: InSightWeatherData
+): HistoricWeatherData => {
+  const missionInfo = {
+    name: 'InSight Mars Lander',
+    location: 'Elysium Planitia',
+    coordinates: { latitude: 4.5024, longitude: 135.6234 },
+    mission_duration: `Sol ${insightData.sol_keys[0]} - Sol ${insightData.sol_keys[insightData.sol_keys.length - 1]}`,
+    earth_dates: {
+      start: (insightData[insightData.sol_keys[0]] as InSightSolData)?.First_UTC?.split('T')[0] || '2018-11-26',
+      end: (insightData[insightData.sol_keys[insightData.sol_keys.length - 1]] as InSightSolData)?.Last_UTC?.split('T')[0] || '2022-12-15'
     },
+    status: 'Mission Completed',
+    total_sols: insightData.sol_keys.length
+  }
+
+  const chartData: HistoricWeatherData = {
+    mission_info: missionInfo,
     temperature_data: [],
     pressure_data: [],
     wind_data: [],
     atmospheric_conditions: []
   }
 
-  sols.forEach((sol: number) => {
-    const solData = insightData[sol.toString()]
-    if (!solData) return
-
-    const earthDate = solData.First_UTC?.split('T')[0] || ''
-    const season = solData.Season || 'Unknown'
+  insightData.sol_keys.forEach((sol: string) => {
+    const solData = insightData[sol] as InSightSolData
+    const earth_date = new Date(solData.First_UTC).toISOString().split('T')[0]
+    const season = solData.Season
 
     // Temperature data
     if (solData.AT) {
       chartData.temperature_data.push({
-        sol: sol,
-        earth_date: earthDate,
+        sol: Number(sol),
+        earth_date,
         min_temp: solData.AT.mn || null,
         max_temp: solData.AT.mx || null,
         avg_temp: solData.AT.av || null,
         temp_range: solData.AT.mx && solData.AT.mn ? solData.AT.mx - solData.AT.mn : null,
-        season: season,
+        season,
         sample_count: solData.AT.ct || 0
       })
     }
@@ -1039,45 +1057,38 @@ const processInsightDataForCharts = (insightData: any): HistoricWeatherData => {
     // Pressure data
     if (solData.PRE) {
       chartData.pressure_data.push({
-        sol: sol,
-        earth_date: earthDate,
-        pressure: solData.PRE.av || null,
-        pressure_min: solData.PRE.mn || null,
-        pressure_max: solData.PRE.mx || null,
-        season: season,
-        sample_count: solData.PRE.ct || 0
+        sol: parseInt(sol),
+        earth_date,
+        pressure: solData.PRE.av,
+        pressure_min: solData.PRE.mn,
+        pressure_max: solData.PRE.mx,
+        season,
+        sample_count: solData.PRE.ct
       })
     }
 
     // Wind data
     if (solData.HWS || solData.WD) {
-      const windData: WindDataPoint = {
-        sol: sol,
-        earth_date: earthDate,
-        season: season
+      const windData = {
+        sol: Number(sol),
+        earth_date,
+        season,
+        wind_speed: solData.HWS?.av || null,
+        wind_speed_min: solData.HWS?.mn || null,
+        wind_speed_max: solData.HWS?.mx || null,
+        wind_speed_samples: solData.HWS?.ct || 0,
+        wind_direction: solData.WD?.most_common?.compass_point || null,
+        wind_direction_degrees: solData.WD?.most_common?.compass_degrees || null,
+        wind_direction_samples: solData.WD?.most_common?.ct || 0
       }
-
-      if (solData.HWS) {
-        windData.wind_speed = solData.HWS.av || null
-        windData.wind_speed_min = solData.HWS.mn || null
-        windData.wind_speed_max = solData.HWS.mx || null
-        windData.wind_speed_samples = solData.HWS.ct || 0
-      }
-
-      if (solData.WD && solData.WD.most_common) {
-        windData.wind_direction = solData.WD.most_common.compass_point || null
-        windData.wind_direction_degrees = solData.WD.most_common.compass_degrees || null
-        windData.wind_direction_samples = solData.WD.most_common.ct || 0
-      }
-
       chartData.wind_data.push(windData)
     }
 
     // Atmospheric conditions summary
     chartData.atmospheric_conditions.push({
-      sol: sol,
-      earth_date: earthDate,
-      season: season,
+      sol: Number(sol),
+      earth_date,
+      season,
       has_temperature: !!solData.AT,
       has_pressure: !!solData.PRE,
       has_wind_speed: !!solData.HWS,
@@ -1089,25 +1100,13 @@ const processInsightDataForCharts = (insightData: any): HistoricWeatherData => {
   return chartData
 }
 
-// Calculate data quality score for a sol
-const calculateDataQuality = (solData: any): number => {
-  let score = 0
-  let total = 0
-
-  if (solData.AT) {
-    score += (solData.AT.ct >= 18 * 24) ? 1 : (solData.AT.ct / (18 * 24))
-    total += 1
-  }
-  if (solData.PRE) {
-    score += (solData.PRE.ct >= 18 * 24) ? 1 : (solData.PRE.ct / (18 * 24))
-    total += 1
-  }
-  if (solData.HWS) {
-    score += (solData.HWS.ct >= 18 * 24) ? 1 : (solData.HWS.ct / (18 * 24))
-    total += 1
-  }
-
-  return total > 0 ? Math.round((score / total) * 100) : 0
+const calculateDataQuality = (solData: InSightSolData): number => {
+  let quality = 0
+  if (solData.AT?.av) quality += 25
+  if (solData.PRE?.av) quality += 25
+  if (solData.HWS?.av) quality += 25
+  if (solData.WD?.most_common?.compass_point) quality += 25
+  return quality
 }
 
 // Generate realistic historical simulation data for demonstration
@@ -1212,66 +1211,35 @@ const generateHistoricalSimulationData = (): HistoricWeatherData => {
   return chartData
 }
 
-// TechPort API Integration
-export const fetchTechPortProjects = async (params: {
-  page?: number
-  limit?: number
-  updatedSince?: string
-} = {}): Promise<any> => {
+// Tech Transfer (TechPort) API
+// Fetch a list of TechPort projects
+export const fetchTechPortProjects = async (
+  params: {
+    page?: number
+    limit?: number
+    updatedSince?: string
+  } = {}
+): Promise<TechPortResponse> => {
   try {
-    console.log('Fetching TechPort projects with params:', params)
-    
-    // TechPort API endpoint for all projects
-    const techPortResponse = await axios.get('https://techport.nasa.gov/api/projects', {
-      params: {
-        page: params.page || 1,
-        limit: params.limit || 100,
-        updatedSince: params.updatedSince
-      },
-      timeout: 15000
-    })
-
-    console.log('TechPort API Response Status:', techPortResponse.status)
-    console.log('TechPort API Response Data Structure:', {
-      hasProjects: !!techPortResponse.data.projects,
-      projectsLength: techPortResponse.data.projects?.length,
-      total: techPortResponse.data.total,
-      dataKeys: Object.keys(techPortResponse.data)
-    })
-
-    // Log first project structure for debugging
-    if (techPortResponse.data.projects && techPortResponse.data.projects.length > 0) {
-      console.log('First project structure:', Object.keys(techPortResponse.data.projects[0]))
-    }
-
-    return {
-      projects: techPortResponse.data.projects || [],
-      total: techPortResponse.data.total || 0,
-      page: techPortResponse.data.page || 1,
-      limit: techPortResponse.data.limit || 100,
-      timestamp: new Date().toISOString()
-    }
-  } catch (error: any) {
+    const response = await nasaApiClient.get<{ projects: TechPortResponse }>(
+      nasaConfig.endpoints.techport,
+      {
+        params: {
+          ...params
+        }
+      }
+    )
+    return response.data.projects
+  } catch (error) {
     console.error('Error fetching TechPort projects:', error)
-    console.error('Error details:', {
-      message: error.message,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data
-    })
-    
-    // Only use mock data in development environment or if explicitly requested
-    if (process.env.NODE_ENV === 'development' || process.env.USE_MOCK_DATA === 'true') {
-      console.log('Using mock data due to development environment or explicit flag')
-      return getMockTechPortProjects()
-    }
-    
-    // In production, throw the error so the frontend can handle it appropriately
-    throw new Error(`Failed to fetch TechPort projects: ${error.message}`)
+    return { projects: [] } // Return empty structure on error
   }
 }
 
-export const fetchTechPortProject = async (projectId: string): Promise<any> => {
+// Fetch a single TechPort project by ID
+export const fetchTechPortProject = async (
+  projectId: string
+): Promise<unknown> => {
   try {
     const response = await axios.get(`https://techport.nasa.gov/api/projects/${projectId}`, {
       timeout: 10000
@@ -1279,249 +1247,69 @@ export const fetchTechPortProject = async (projectId: string): Promise<any> => {
     return response.data
   } catch (error) {
     console.error(`Error fetching TechPort project ${projectId}:`, error)
-    throw error
+    return null
   }
 }
 
-// Mock data for development and fallback
-const getMockTechPortProjects = () => {
-  const baseProjects = [
-    {
-      id: 'MOCK_001',
-      title: 'Advanced Propulsion Systems',
-      description: 'Development of next-generation rocket propulsion technology for deep space missions',
-      status: 'active',
-      startDate: '2023-01-15',
-      endDate: '2026-12-31',
-      trl: 6,
-      category: 'Propulsion',
-      organization: 'Marshall Space Flight Center',
-      location: 'Huntsville, AL',
-      budget: 15000000,
-      manager: 'Dr. Sarah Chen',
-      tags: ['propulsion', 'rocket', 'deep-space', 'mars'],
-      benefits: ['Enhanced mission capability', 'Reduced fuel consumption', 'Increased payload capacity'],
-      lastUpdated: '2024-11-15'
-    },
-    {
-      id: 'MOCK_002',
-      title: 'Autonomous Navigation for Mars Rovers',
-      description: 'AI-powered navigation system for autonomous exploration of Martian terrain',
-      status: 'active',
-      startDate: '2022-06-01',
-      endDate: '2025-08-31',
-      trl: 7,
-      category: 'Robotics',
-      organization: 'Jet Propulsion Laboratory',
-      location: 'Pasadena, CA',
-      budget: 8500000,
-      manager: 'Dr. Michael Rodriguez',
-      tags: ['ai', 'navigation', 'mars', 'rovers', 'autonomy'],
-      benefits: ['Improved exploration efficiency', 'Reduced mission risk', 'Enhanced scientific data collection'],
-      lastUpdated: '2024-12-01'
-    },
-    {
-      id: 'MOCK_003',
-      title: 'Solar Array Deployment Mechanisms',
-      description: 'Lightweight, reliable solar array deployment systems for spacecraft',
-      status: 'completed',
-      startDate: '2021-03-15',
-      endDate: '2024-09-30',
-      trl: 9,
-      category: 'Power Systems',
-      organization: 'Glenn Research Center',
-      location: 'Cleveland, OH',
-      budget: 5200000,
-      manager: 'Dr. Jennifer Park',
-      tags: ['solar', 'power', 'deployment', 'spacecraft'],
-      benefits: ['Reduced mass', 'Improved reliability', 'Cost savings'],
-      lastUpdated: '2024-10-01'
-    },
-    {
-      id: 'MOCK_004',
-      title: 'Advanced Life Support Systems',
-      description: 'Closed-loop life support technology for long-duration space missions',
-      status: 'active',
-      startDate: '2023-09-01',
-      endDate: '2027-08-31',
-      trl: 5,
-      category: 'Life Support',
-      organization: 'Johnson Space Center',
-      location: 'Houston, TX',
-      budget: 12000000,
-      manager: 'Dr. Amanda Foster',
-      tags: ['life-support', 'recycling', 'oxygen', 'water', 'long-duration'],
-      benefits: ['Crew safety', 'Mission sustainability', 'Resource efficiency'],
-      lastUpdated: '2024-11-30'
-    },
-    {
-      id: 'MOCK_005',
-      title: 'Quantum Communication Networks',
-      description: 'Secure quantum communication systems for deep space missions',
-      status: 'planned',
-      startDate: '2025-01-01',
-      endDate: '2028-12-31',
-      trl: 3,
-      category: 'Communications',
-      organization: 'Ames Research Center',
-      location: 'Mountain View, CA',
-      budget: 18000000,
-      manager: 'Dr. Robert Kim',
-      tags: ['quantum', 'communication', 'security', 'deep-space'],
-      benefits: ['Unbreakable encryption', 'Enhanced data security', 'Future-proof technology'],
-      lastUpdated: '2024-12-10'
-    },
-    {
-      id: 'MOCK_006',
-      title: 'Hypersonic Vehicle Thermal Protection',
-      description: 'Ultra-high temperature materials for hypersonic vehicle heat shields',
-      status: 'active',
-      startDate: '2022-11-01',
-      endDate: '2026-10-31',
-      trl: 4,
-      category: 'Materials',
-      organization: 'Langley Research Center',
-      location: 'Hampton, VA',
-      budget: 9800000,
-      manager: 'Dr. Lisa Thompson',
-      tags: ['hypersonic', 'thermal', 'materials', 'heat-shield'],
-      benefits: ['Improved heat resistance', 'Reduced weight', 'Enhanced safety'],
-      lastUpdated: '2024-11-20'
+// Aggregate and return a list of technology categories
+export const getTechPortCategories = async (): Promise<
+  { code: string; name: string }[]
+> => {
+  try {
+    // In a real scenario, this might be a separate endpoint or aggregated from projects
+    const projectsResponse = (await fetchTechPortProjects({ limit: 500 })) as {
+      projects: { technologyAreas: { name: string; code: string }[] }[]
     }
-  ]
-
-  // Generate additional mock projects to create a more realistic dataset
-  const categories = ['Propulsion', 'Robotics', 'Power Systems', 'Life Support', 'Communications', 'Materials', 'Sensors', 'Computing', 'Thermal Management', 'Structures']
-  const organizations = ['JPL', 'Marshall Space Flight Center', 'Glenn Research Center', 'Johnson Space Center', 'Ames Research Center', 'Langley Research Center', 'Goddard Space Flight Center', 'Kennedy Space Center']
-  const statuses = ['active', 'completed', 'planned', 'cancelled']
-  const locations = ['Pasadena, CA', 'Huntsville, AL', 'Cleveland, OH', 'Houston, TX', 'Mountain View, CA', 'Hampton, VA', 'Greenbelt, MD', 'Cape Canaveral, FL']
-  
-  const projectTitles = [
-    'Advanced Propulsion Research', 'Next-Gen Solar Panels', 'Mars Habitat Construction', 'Deep Space Communication Array',
-    'Asteroid Mining Technology', 'Lunar Base Life Support', 'Ion Drive Optimization', 'Robotic Assembly Systems',
-    'Cryogenic Fuel Storage', 'Advanced Materials Testing', 'Atmospheric Entry Systems', 'Space-Based Manufacturing',
-    'Orbital Mechanics Simulation', 'Planetary Surface Analysis', 'Radiation Shielding Technology', 'Zero-G Manufacturing',
-    'Interplanetary Navigation', 'Thermal Management Systems', 'Advanced Composites Research', 'Space Debris Mitigation',
-    'Extraterrestrial Resource Utilization', 'Advanced Imaging Systems', 'Automated Docking Technology', 'Space Suit Enhancement',
-    'Microgravity Biology Research', 'Plasma Propulsion Systems', 'Advanced Sensor Networks', 'Space Weather Monitoring',
-    'In-Situ Resource Processing', 'Advanced Computing Systems', 'Lunar Rover Development', 'Mars Sample Analysis',
-    'Advanced Battery Technology', 'Space-Based Solar Power', 'Atmospheric Processing Systems', 'Advanced Guidance Systems',
-    'Structural Health Monitoring', 'Advanced Materials Processing', 'Space-Based Agriculture', 'Advanced Thermal Control',
-    'Robotic Maintenance Systems', 'Advanced Propellant Technology', 'Space-Based Communications', 'Advanced Sensor Fusion',
-    'Planetary Protection Systems', 'Advanced Life Detection', 'Space-Based Manufacturing', 'Advanced Navigation Systems',
-    'Orbital Debris Tracking', 'Advanced Propulsion Testing', 'Space-Based Energy Storage', 'Advanced Materials Research'
-  ]
-
-  const additionalProjects = []
-  for (let i = 0; i < 150; i++) {
-    const category = categories[Math.floor(Math.random() * categories.length)]
-    const org = organizations[Math.floor(Math.random() * organizations.length)]
-    const status = statuses[Math.floor(Math.random() * statuses.length)]
-    const location = locations[Math.floor(Math.random() * locations.length)]
-    const title = projectTitles[Math.floor(Math.random() * projectTitles.length)] + ` ${i + 7}`
-    
-    additionalProjects.push({
-      id: `MOCK_${String(i + 7).padStart(3, '0')}`,
-      title,
-      description: `Advanced research and development project focused on ${category.toLowerCase()} technology for space exploration missions`,
-      status,
-      startDate: `${2020 + Math.floor(Math.random() * 5)}-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
-      endDate: `${2025 + Math.floor(Math.random() * 5)}-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
-      trl: Math.floor(Math.random() * 9) + 1,
-      category,
-      organization: org,
-      location,
-      budget: Math.floor(Math.random() * 20000000) + 1000000,
-      manager: `Dr. ${['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'][Math.floor(Math.random() * 8)]}`,
-      tags: [category.toLowerCase().replace(' ', '-'), 'research', 'development', 'nasa'],
-      benefits: ['Advanced capability', 'Cost reduction', 'Enhanced performance'],
-      lastUpdated: '2024-12-10'
+    const categories = new Map<string, string>()
+    projectsResponse.projects.forEach(project => {
+      project.technologyAreas.forEach(area => {
+        categories.set(area.code, area.name)
+      })
     })
-  }
-
-  const allProjects = [...baseProjects, ...additionalProjects]
-
-  return {
-    projects: allProjects,
-    total: allProjects.length,
-    page: 1,
-    limit: 500,
-    timestamp: new Date().toISOString()
+    return Array.from(categories.entries()).map(([code, name]) => ({ code, name }))
+  } catch (error) {
+    console.error('Error getting TechPort categories:', error)
+    return []
   }
 }
 
-export const getTechPortCategories = async (): Promise<any> => {
-  // In a real implementation, this would fetch from TechPort API
-  return {
-    categories: [
-      { id: 'propulsion', name: 'Propulsion', count: 145, color: '#FF6B6B' },
-      { id: 'robotics', name: 'Robotics', count: 98, color: '#4ECDC4' },
-      { id: 'power-systems', name: 'Power Systems', count: 87, color: '#45B7D1' },
-      { id: 'life-support', name: 'Life Support', count: 65, color: '#96CEB4' },
-      { id: 'communications', name: 'Communications', count: 78, color: '#FFEAA7' },
-      { id: 'materials', name: 'Materials', count: 112, color: '#DDA0DD' },
-      { id: 'sensors', name: 'Sensors', count: 134, color: '#FFB347' },
-      { id: 'computing', name: 'Computing', count: 89, color: '#87CEEB' },
-      { id: 'thermal', name: 'Thermal Management', count: 67, color: '#F0E68C' },
-      { id: 'structures', name: 'Structures', count: 93, color: '#FFA07A' }
-    ],
-    timestamp: new Date().toISOString()
-  }
-}
+export const getTechPortAnalytics = async (): Promise<{
+  statusCounts: Record<string, number>
+  categoryCounts: Record<string, number>
+  totalProjects: number
+}> => {
+  try {
+    const projectsResponse = (await fetchTechPortProjects({
+      limit: 1000
+    })) as {
+      projects: { status: string; technologyAreas: { name: string }[] }[]
+    }
 
-export const getTechPortAnalytics = async (): Promise<any> => {
-  return {
-    overview: {
-      totalProjects: 1247,
-      activeProjects: 892,
-      completedProjects: 234,
-      plannedProjects: 121,
-      totalBudget: 2.4e9, // $2.4 billion
-      averageTrl: 5.2
-    },
-    trlDistribution: {
-      1: 45,
-      2: 78,
-      3: 134,
-      4: 189,
-      5: 223,
-      6: 267,
-      7: 198,
-      8: 89,
-      9: 24
-    },
-    categoryDistribution: [
-      { category: 'Propulsion', count: 145, percentage: 11.6 },
-      { category: 'Sensors', count: 134, percentage: 10.7 },
-      { category: 'Materials', count: 112, percentage: 9.0 },
-      { category: 'Robotics', count: 98, percentage: 7.9 },
-      { category: 'Structures', count: 93, percentage: 7.5 },
-      { category: 'Computing', count: 89, percentage: 7.1 },
-      { category: 'Power Systems', count: 87, percentage: 7.0 },
-      { category: 'Communications', count: 78, percentage: 6.3 },
-      { category: 'Thermal Management', count: 67, percentage: 5.4 },
-      { category: 'Life Support', count: 65, percentage: 5.2 }
-    ],
-    organizationDistribution: [
-      { org: 'JPL', count: 234, percentage: 18.8 },
-      { org: 'Marshall Space Flight Center', count: 189, percentage: 15.2 },
-      { org: 'Glenn Research Center', count: 156, percentage: 12.5 },
-      { org: 'Johnson Space Center', count: 134, percentage: 10.7 },
-      { org: 'Ames Research Center', count: 123, percentage: 9.9 },
-      { org: 'Langley Research Center', count: 112, percentage: 9.0 },
-      { org: 'Goddard Space Flight Center', count: 98, percentage: 7.9 },
-      { org: 'Kennedy Space Center', count: 87, percentage: 7.0 },
-      { org: 'Stennis Space Center', count: 65, percentage: 5.2 },
-      { org: 'Other Centers', count: 49, percentage: 3.9 }
-    ],
-    timeline: [
-      { year: 2020, started: 89, completed: 23, active: 234 },
-      { year: 2021, started: 134, completed: 45, active: 287 },
-      { year: 2022, started: 178, completed: 67, active: 398 },
-      { year: 2023, started: 203, completed: 89, active: 512 },
-      { year: 2024, started: 234, completed: 112, active: 634 },
-      { year: 2025, started: 156, completed: 89, active: 701 }
-    ],
-    timestamp: new Date().toISOString()
+    const statusCounts = projectsResponse.projects.reduce(
+      (acc, project) => {
+        project.status === 'active' ? acc.active++ : project.status === 'completed' ? acc.completed++ : project.status === 'planned' ? acc.planned++ : acc.cancelled++
+        return acc
+      },
+      { active: 0, completed: 0, planned: 0, cancelled: 0 }
+    )
+
+    const categoryCounts = projectsResponse.projects.reduce(
+      (acc, project) => {
+        project.technologyAreas.forEach(area => {
+          acc[area.name] = (acc[area.name] || 0) + 1
+        })
+        return acc
+      },
+      {} as Record<string, number>
+    )
+
+    return {
+      statusCounts,
+      categoryCounts,
+      totalProjects: projectsResponse.projects.length
+    }
+  } catch (error) {
+    console.error('Error getting TechPort analytics:', error)
+    return { statusCounts: {}, categoryCounts: {}, totalProjects: 0 }
   }
 } 

@@ -5,7 +5,9 @@ module.exports = {
     apod: '/planetary/apod',
     marsRover: '/mars-photos/api/v1/rovers', // Base endpoint for all rovers
     marsRoverManifest: '/mars-photos/api/v1/manifests', // For rover info and latest sol
-    perseveranceWeather: 'https://mars.nasa.gov/layout/embed/image/m20weather/' // Perseverance MEDA weather data
+    insightWeather: '/insight_weather/', // InSight weather data (historical)
+    marsWeatherService: 'https://mars.nasa.gov/rss/api/?feed=weather&category=msl&feedtype=json', // MSL weather feed
+    maasWeather: 'http://marsweather.ingenology.com/v1/latest/' // MAAS API for current Mars weather
   },
   // Available Mars rovers
   rovers: ['curiosity', 'opportunity', 'spirit', 'perseverance'],

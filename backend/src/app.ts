@@ -38,7 +38,7 @@ app.listen(appConfig.port, () => {
   
   if (appConfig.environment === 'development') {
     console.log(`Available endpoints:`)
-    console.log(`  GET http://localhost:${appConfig.port}/`)
+    console.log(`  GET http://localhost:${appConfig.port}/api/`)
     console.log(`  GET http://localhost:${appConfig.port}/api/apod?date=YYYY-MM-DD`)
     console.log(`  GET http://localhost:${appConfig.port}/api/mars-photos?sol=NUMBER`)
   }

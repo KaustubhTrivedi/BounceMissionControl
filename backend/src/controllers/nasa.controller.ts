@@ -16,6 +16,7 @@ import { isValidDate, isValidSol, isNonEmptyString } from '../utils/validators'
 import { MarsRoverAPIResponse } from '../models/nasa.models'
 import { asyncHandler } from '../utils/async-handler'
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const nasaConfig = require('../config/nasa.config')
 
 // Health check controller

@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { APODResponse, MarsRoverResponse, PerseveranceWeatherResponse } from '../models/nasa.models'
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const nasaConfig = require('../config/nasa.config')
 
 // Create axios instance with NASA API configuration

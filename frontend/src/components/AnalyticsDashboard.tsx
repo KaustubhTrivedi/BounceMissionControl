@@ -8,7 +8,7 @@ interface AnalyticsDashboardProps {
 
 export default function AnalyticsDashboard({
   analytics,
-  projects
+  projects: _projects
 }: AnalyticsDashboardProps) {
   const formatBudget = (budget: number | undefined) => {
     if (!budget || budget === 0) return '$0'

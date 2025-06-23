@@ -226,7 +226,6 @@ jobs:
 
   quality-gates:
     name: ✅ Quality Gates
-    if: false
     runs-on: self-hosted
     needs: [unit-tests, integration-tests]
     steps:

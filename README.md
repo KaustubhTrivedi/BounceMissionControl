@@ -1,5 +1,9 @@
 # Bounce Mission Control
 
+[![Backend CI/CD](https://github.com/KaustubhTrivedi/BounceMissionControl/actions/workflows/backend.yml/badge.svg)](https://github.com/KaustubhTrivedi/BounceMissionControl/actions/workflows/backend.yml)
+[![Frontend CI/CD](https://github.com/KaustubhTrivedi/BounceMissionControl/actions/workflows/frontend.yml/badge.svg)](https://github.com/KaustubhTrivedi/BounceMissionControl/actions/workflows/frontend.yml)
+[![🧪 CI - Test & Build](https://github.com/KaustubhTrivedi/BounceMissionControl/actions/workflows/ci.yml/badge.svg)](https://github.com/KaustubhTrivedi/BounceMissionControl/actions/workflows/ci.yml)
+
 Bounce Mission Control is a full-stack web application designed to make space exploration accessible to everyone by leveraging NASA's public APIs. It serves as a real-time command center, allowing users to explore fascinating data about our solar system—from daily astronomy pictures to Mars rover expeditions and technology development projects.
 
 ## 🚀 Key Features

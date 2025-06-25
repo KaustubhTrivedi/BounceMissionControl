@@ -194,11 +194,20 @@ const getMultiPlanetaryDashboardData = async (req, res) => {
 exports.getMultiPlanetaryDashboardData = getMultiPlanetaryDashboardData;
 // Get historic Mars weather data for visualization
 exports.getHistoricMarsWeather = (0, async_handler_1.asyncHandler)(async (req, res) => {
-    const historicData = await (0, nasa_api_helper_1.fetchHistoricMarsWeatherData)();
+    const { startSol, endSol, preferRealData } = req.query;
+    const params = {
+        startSol: startSol ? parseInt(startSol) : undefined,
+        endSol: endSol ? parseInt(endSol) : undefined,
+        preferRealData: preferRealData !== 'false' // Default to true unless explicitly set to false
+    };
+    console.log('🚀 Mars weather data request received with params:', params);
+    const historicData = await (0, nasa_api_helper_1.fetchHistoricMarsWeatherData)(params);
     res.status(200).json({
         success: true,
         data: historicData,
-        message: 'Historic Mars weather data retrieved successfully'
+        message: 'Historic Mars weather data retrieved successfully',
+        params: params,
+        dataSource: historicData.mission_info.name.includes('Simulated') ? 'simulated' : 'nasa_insight'
     });
 });
 // TechPort Controllers

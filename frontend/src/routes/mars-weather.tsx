@@ -1,16 +1,22 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Alert, AlertDescription } from '../components/ui/alert'
+import { Button } from '../components/ui/button'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar, ScatterChart, Scatter } from 'recharts'
-import { Info, Activity, AlertTriangle, ThermometerSun, Gauge } from 'lucide-react'
+import { Info, Activity, AlertTriangle, ThermometerSun, Gauge, Satellite, Gamepad2 } from 'lucide-react'
 import { useHistoricMarsWeather } from '../hooks/useNASA'
+import { useState } from 'react'
 
 export const Route = createFileRoute('/mars-weather')({
   component: MarsWeatherPage,
 })
 
 function MarsWeatherPage() {
-  const { data: weatherResponse, isLoading: loading, error } = useHistoricMarsWeather()
+  const [useRealData, setUseRealData] = useState(true)
+  
+  const { data: weatherResponse, isLoading: loading, error } = useHistoricMarsWeather({
+    preferRealData: useRealData
+  })
   const weatherData = weatherResponse?.data
 
   const formatTemperatureChartData = () => {
@@ -157,15 +163,89 @@ function MarsWeatherPage() {
         <p className="text-xl text-gray-600">
           Real atmospheric measurements from NASA's Mars missions
         </p>
+        
+        {/* Data Source Indicator */}
+        {weatherData && (
+          <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
+            weatherData.mission_info.name.includes('Simulated')
+              ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+              : 'bg-green-100 text-green-800 border border-green-200'
+          }`}>
+            {weatherData.mission_info.name.includes('Simulated') ? (
+              <>
+                🎮 <span className="ml-1">Simulated Data</span>
+              </>
+            ) : (
+              <>
+                🛰️ <span className="ml-1">Real NASA InSight Data</span>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Data Source Toggle */}
+      <div className="flex justify-center mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 border">
+          <div className="flex items-center space-x-4">
+            <span className="text-sm font-medium text-gray-700">Data Source:</span>
+            <div className="flex space-x-2">
+              <Button
+                variant={useRealData ? "default" : "outline"}
+                size="sm"
+                onClick={() => setUseRealData(true)}
+                className="flex items-center space-x-2"
+              >
+                <Satellite className="h-4 w-4" />
+                <span>Real NASA Data</span>
+              </Button>
+              <Button
+                variant={!useRealData ? "default" : "outline"}
+                size="sm"
+                onClick={() => setUseRealData(false)}
+                className="flex items-center space-x-2"
+              >
+                <Gamepad2 className="h-4 w-4" />
+                <span>Simulated Data</span>
+              </Button>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            {useRealData 
+              ? "Real measurements from Mars (last 7 sols only)" 
+              : "Enhanced simulation based on actual mission parameters"
+            }
+          </p>
+        </div>
       </div>
 
       {/* InSight Mission Status Alert */}
       <Alert className="border-amber-200 bg-amber-50">
         <Info className="h-4 w-4 text-amber-600" />
         <AlertDescription className="text-amber-800">
-          <strong>InSight Mission Legacy:</strong> NASA's InSight Mars lander concluded its mission in December 2022 
-          after nearly 4 years of groundbreaking science. The data visualized here represents real atmospheric 
-          measurements from {weatherData.mission_info.location}, providing invaluable insights into Martian weather patterns.
+          {weatherData?.mission_info.name.includes('Simulated') ? (
+            <>
+              <strong>Enhanced Simulation:</strong> This data is generated using realistic Mars atmospheric models 
+              based on actual mission parameters from NASA's InSight and other Mars missions. Real-time NASA data 
+              may be temporarily unavailable.
+            </>
+          ) : (
+            <>
+              <strong>Real NASA InSight Data:</strong> You're viewing authentic atmospheric measurements from NASA's 
+              InSight Mars lander mission. InSight operated from November 2018 to December 2022 at {weatherData.mission_info.location}, 
+              providing invaluable insights into Martian weather patterns.
+            </>
+          )}
+        </AlertDescription>
+      </Alert>
+
+      {/* NASA API Limitation Notice */}
+      <Alert className="border-blue-200 bg-blue-50">
+        <Info className="h-4 w-4 text-blue-600" />
+        <AlertDescription className="text-blue-800">
+          <strong>Data Availability:</strong> NASA's InSight Weather API only provides the last 7 sols (Martian days) 
+          of weather data due to API limitations. For extended historical analysis, use the simulated data option 
+          which provides a complete dataset based on the full InSight mission timeline.
         </AlertDescription>
       </Alert>
 

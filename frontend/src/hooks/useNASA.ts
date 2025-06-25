@@ -26,7 +26,7 @@ export const nasaQueryKeys = {
   mostActiveRover: () => ['nasa', 'most-active-rover'] as const,
   latestRoverPhotos: (params: Record<string, any>) => ['nasa', 'latest-rover-photos', params] as const,
   multiPlanetaryDashboard: () => ['nasa', 'multi-planetary-dashboard'] as const,
-  historicMarsWeather: () => ['nasa', 'historic-mars-weather'] as const,
+  historicMarsWeather: (params?: Record<string, any>) => ['nasa', 'historic-mars-weather', params] as const,
 }
 
 // APOD Hook
@@ -187,11 +187,16 @@ export const useMultiPlanetaryDashboard = (
 
 // Hook to get historic Mars weather data (InSight legacy data)
 export const useHistoricMarsWeather = (
+  params?: {
+    startSol?: number
+    endSol?: number
+    preferRealData?: boolean
+  },
   options?: Omit<UseQueryOptions<HistoricMarsWeatherResponse>, 'queryKey' | 'queryFn'>
 ) => {
   return useQuery({
-    queryKey: nasaQueryKeys.historicMarsWeather(),
-    queryFn: () => nasaApi.getHistoricMarsWeather(),
+    queryKey: nasaQueryKeys.historicMarsWeather(params),
+    queryFn: () => nasaApi.getHistoricMarsWeather(params),
     staleTime: 1000 * 60 * 60, // 1 hour (historic data doesn't change)
     gcTime: 1000 * 60 * 60 * 24, // 24 hours
     ...options,

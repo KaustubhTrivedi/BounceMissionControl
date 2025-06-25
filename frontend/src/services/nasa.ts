@@ -386,8 +386,12 @@ export const nasaApi = {
   },
 
   // Get historic Mars weather data (InSight legacy data)
-  getHistoricMarsWeather: async (): Promise<HistoricMarsWeatherResponse> => {
-    return api.get<HistoricMarsWeatherResponse>(endpoints.marsWeather)
+  getHistoricMarsWeather: async (params?: {
+    startSol?: number
+    endSol?: number
+    preferRealData?: boolean
+  }): Promise<HistoricMarsWeatherResponse> => {
+    return api.get<HistoricMarsWeatherResponse>(endpoints.marsWeather, params)
   },
 
   // TechPort API functions

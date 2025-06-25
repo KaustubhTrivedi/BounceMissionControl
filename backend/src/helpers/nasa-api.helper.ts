@@ -992,23 +992,101 @@ export const getMultiPlanetaryDashboard = async (): Promise<MultiPlanetDashboard
 }
 
 // Historic Mars Weather Data Aggregator
-// This function attempts to fetch from InSight first, then falls back to a realistic simulation.
-export const fetchHistoricMarsWeatherData = async (): Promise<HistoricWeatherData> => {
-  try {
-    const insightData = await fetchInSightWeatherData()
-    if (insightData) {
-      console.log('Processing historic data from InSight mission...')
-      return processInsightDataForCharts(insightData)
+// This function fetches either real NASA data or simulated data (no hybrid)
+export const fetchHistoricMarsWeatherData = async (
+  params?: {
+    startSol?: number
+    endSol?: number
+    preferRealData?: boolean
+  }
+): Promise<HistoricWeatherData> => {
+  const preferRealData = params?.preferRealData !== false // Default to true
+  
+  if (preferRealData) {
+    console.log('🔍 Attempting to fetch real InSight Mars weather data from NASA...')
+    console.log('📝 Note: NASA InSight API only provides last 7 sols (API limitation)')
+    
+    // Try multiple times with different approaches
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`📡 Attempt ${attempt}: Fetching InSight data...`)
+        const insightData = await fetchInSightWeatherDataWithRetry()
+        
+        if (insightData && insightData.sol_keys && insightData.sol_keys.length > 0) {
+          console.log(`✅ Successfully retrieved real InSight data with ${insightData.sol_keys.length} sols!`)
+          console.log(`📊 Data range: Sol ${insightData.sol_keys[0]} to Sol ${insightData.sol_keys[insightData.sol_keys.length - 1]}`)
+          
+          // Return only the real NASA data (last 7 sols)
+          const processedData = processInsightDataForCharts(insightData)
+          
+          if (processedData.temperature_data.length > 0 || processedData.pressure_data.length > 0) {
+            console.log(`🎯 Processed ${processedData.temperature_data.length} temperature readings and ${processedData.pressure_data.length} pressure readings`)
+            return processedData
+          } else {
+            console.warn('⚠️ InSight data was fetched but contained no usable weather measurements')
+          }
+        } else {
+          console.warn(`⚠️ Attempt ${attempt}: InSight API returned empty or invalid data`)
+        }
+      } catch (error) {
+        console.warn(`❌ Attempt ${attempt}: Failed to fetch InSight data:`, error)
+        
+        if (attempt < 3) {
+          // Wait before retry (exponential backoff)
+          const waitTime = Math.pow(2, attempt) * 1000
+          console.log(`⏳ Waiting ${waitTime}ms before retry...`)
+          await new Promise(resolve => setTimeout(resolve, waitTime))
+        }
+      }
     }
-  } catch (error) {
-    console.warn(
-      'Could not fetch or process InSight historic data, falling back to simulation.',
-      error
-    )
+    
+    console.log('💾 InSight real data unavailable, falling back to enhanced simulation based on historical mission data...')
+  } else {
+    console.log('🎮 Using simulated data as requested (skipping NASA API calls)...')
   }
 
-  console.log('Generating simulated historic Mars weather data...')
-  return generateHistoricalSimulationData()
+  return generateHistoricalSimulationData(params)
+}
+
+
+
+// Enhanced InSight data fetching with retry logic
+const fetchInSightWeatherDataWithRetry = async (): Promise<InSightWeatherData | null> => {
+  const endpoints = [
+    // Primary NASA InSight endpoint
+    nasaConfig.endpoints.insightWeather,
+    // Alternative endpoints if available
+    '/insight_weather/?feedtype=json&ver=1.0',
+  ]
+  
+  for (const endpoint of endpoints) {
+    try {
+      console.log(`🌐 Trying endpoint: ${endpoint}`)
+      
+      const response = await nasaApiClient.get<InSightWeatherData>(endpoint, {
+        params: {
+          feedtype: 'json',
+          ver: '1.0'
+        },
+        timeout: 15000, // Increased timeout for NASA API
+        headers: {
+          'User-Agent': 'BounceMissionControl/1.0 (Educational Project)',
+          'Accept': 'application/json'
+        }
+      })
+      
+      if (response.data && typeof response.data === 'object') {
+        console.log(`✅ Successfully fetched data from: ${endpoint}`)
+        return response.data
+      } else {
+        console.warn(`⚠️ Invalid response format from: ${endpoint}`)
+      }
+    } catch (error) {
+      console.warn(`❌ Failed to fetch from ${endpoint}:`, error)
+    }
+  }
+  
+  return null
 }
 
 const processInsightDataForCharts = (
@@ -1110,9 +1188,15 @@ const calculateDataQuality = (solData: InSightSolData): number => {
 }
 
 // Generate realistic historical simulation data for demonstration
-const generateHistoricalSimulationData = (): HistoricWeatherData => {
-  const startSol = 10
-  const endSol = 800
+const generateHistoricalSimulationData = (
+  params?: {
+    startSol?: number
+    endSol?: number
+    fullMissionData?: boolean
+  }
+): HistoricWeatherData => {
+  const startSol = params?.startSol || 1
+  const endSol = params?.endSol || 790  // Updated to 790 sols as requested
   const chartData: HistoricWeatherData = {
     mission_info: {
       name: 'Simulated Mars Weather Station',
@@ -1120,11 +1204,11 @@ const generateHistoricalSimulationData = (): HistoricWeatherData => {
       coordinates: { latitude: 4.5024, longitude: 135.6234 },
       mission_duration: `Sol ${startSol} - Sol ${endSol}`,
       earth_dates: {
-        start: '2018-12-06',
-        end: '2021-02-18'
+        start: '2018-11-26',  // InSight landing date
+        end: '2020-12-15'     // Approximately 790 sols later
       },
       status: 'Simulated Data',
-      total_sols: endSol - startSol
+      total_sols: endSol - startSol + 1  // Fixed to include both start and end sols
     },
     temperature_data: [],
     pressure_data: [],

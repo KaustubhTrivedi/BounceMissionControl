@@ -218,12 +218,24 @@ export const getMultiPlanetaryDashboardData = async (req: Request, res: Response
 
 // Get historic Mars weather data for visualization
 export const getHistoricMarsWeather = asyncHandler(async (req: Request, res: Response) => {
-  const historicData = await fetchHistoricMarsWeatherData()
+  const { startSol, endSol, preferRealData } = req.query
+  
+  const params = {
+    startSol: startSol ? parseInt(startSol as string) : undefined,
+    endSol: endSol ? parseInt(endSol as string) : undefined,
+    preferRealData: preferRealData !== 'false' // Default to true unless explicitly set to false
+  }
+  
+  console.log('🚀 Mars weather data request received with params:', params)
+  
+  const historicData = await fetchHistoricMarsWeatherData(params)
   
   res.status(200).json({
     success: true,
     data: historicData,
-    message: 'Historic Mars weather data retrieved successfully'
+    message: 'Historic Mars weather data retrieved successfully',
+    params: params,
+    dataSource: historicData.mission_info.name.includes('Simulated') ? 'simulated' : 'nasa_insight'
   })
 })
 

@@ -35,7 +35,8 @@ const defaultConfig = {
 
 // Helper function to build URL with query parameters
 function buildUrl(endpoint: string, params?: Record<string, any>): string {
-  const fullUrl = getApiUrl(endpoint)
+  // Handle absolute URLs
+  const fullUrl = endpoint.startsWith('http') ? endpoint : getApiUrl(endpoint)
   
   if (!params) return fullUrl
   
@@ -96,11 +97,20 @@ async function request<T = any>(
       throw error
     }
     
-    if (error instanceof DOMException && error.name === 'AbortError') {
+    if ((error instanceof DOMException && error.name === 'AbortError') || (typeof error === 'object' && error !== null && 'name' in error && (error as any).name === 'AbortError')) {
       throw new ApiError(
         'Request timeout',
         408,
         'Request Timeout',
+        url
+      )
+    }
+    
+    if (typeof error === 'object' && error !== null && 'status' in error && 'statusText' in error) {
+      throw new ApiError(
+        error instanceof Error ? error.message : 'Request failed',
+        (error as any).status,
+        (error as any).statusText,
         url
       )
     }

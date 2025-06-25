@@ -146,15 +146,12 @@ export const fetchMarsRoverPhotos = async (
     
     // Ensure response has valid structure
     if (!response.data || !Array.isArray(response.data.photos)) {
-      console.warn(`Invalid response structure for rover ${rover}:`, response.data)
-      return { photos: [] }
+      throw new Error(`Invalid response structure for rover ${rover}`)
     }
     
     return response.data
   } catch (error) {
-    console.error(`Error fetching photos for rover ${rover}:`, error)
-    // Return empty photos array instead of throwing
-    return { photos: [] }
+    throw new Error(`Error fetching photos for rover ${rover}: ${error}`)
   }
 }
 
@@ -209,8 +206,7 @@ export const getMostActiveRover = async (): Promise<string> => {
 
     return mostActive.name.toLowerCase()
   } catch (error) {
-    console.error('Error finding most active rover:', error)
-    return 'curiosity' // Fallback
+    throw new Error(`Error finding most active rover: ${error}`)
   }
 }
 
@@ -243,9 +239,7 @@ export const fetchPerseveranceWeatherData = async (): Promise<PerseveranceWeathe
     return generateRealisticMarsWeather()
     
   } catch (error) {
-    console.error('Error fetching Mars weather data:', error)
-    // Return current simulation as fallback
-    return generateRealisticMarsWeather()
+    throw new Error(`Error fetching Mars weather data: ${error}`)
   }
 }
 
@@ -277,7 +271,6 @@ const isDataRecent = (data: unknown): boolean => {
     
     return isRecent
   } catch (error) {
-    console.warn('Error checking data recency:', error)
     return false
   }
 }

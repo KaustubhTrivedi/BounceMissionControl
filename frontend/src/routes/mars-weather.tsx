@@ -148,259 +148,232 @@ function MarsWeatherPage() {
   const windStats = getWindStats()
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold text-gray-900">
-          📊 Historic Martian Weather Data
-        </h1>
-        <p className="text-xl text-gray-600">
-          Real atmospheric measurements from NASA's Mars missions
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-red-900 via-red-800 to-orange-900 text-white">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-4">Mars Weather Data</h1>
+          <p className="text-xl text-red-200">
+            Real-time atmospheric conditions from NASA's Mars missions
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center space-y-0 pb-2">
+              <Activity className="h-4 w-4 text-blue-600" />
+              <CardTitle className="text-sm font-medium ml-2">Mission</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{weatherData.mission_info.name}</div>
+              <p className="text-xs text-muted-foreground">{weatherData.mission_info.status}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center space-y-0 pb-2">
+              <ThermometerSun className="h-4 w-4 text-red-600" />
+              <CardTitle className="text-sm font-medium ml-2">Location</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{weatherData.mission_info.location}</div>
+              <p className="text-xs text-muted-foreground">
+                {weatherData.mission_info.coordinates.latitude.toFixed(2)}°N, {weatherData.mission_info.coordinates.longitude.toFixed(2)}°E
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center space-y-0 pb-2">
+              <Gauge className="h-4 w-4 text-green-600" />
+              <CardTitle className="text-sm font-medium ml-2">Data Period</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{weatherData.mission_info.total_sols} Sols</div>
+              <p className="text-xs text-muted-foreground">
+                {weatherData.mission_info.earth_dates.start} to {weatherData.mission_info.earth_dates.end}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">🌡️ Temperature Range</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Minimum:</span>
+                <span className="font-medium text-blue-600">{tempStats.min.toFixed(1)}°C</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Maximum:</span>
+                <span className="font-medium text-red-600">{tempStats.max.toFixed(1)}°C</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Average:</span>
+                <span className="font-medium">{tempStats.avg.toFixed(1)}°C</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">📊 Pressure Range</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Minimum:</span>
+                <span className="font-medium text-blue-600">{pressureStats.min.toFixed(1)} Pa</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Maximum:</span>
+                <span className="font-medium text-red-600">{pressureStats.max.toFixed(1)} Pa</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Average:</span>
+                <span className="font-medium">{pressureStats.avg.toFixed(1)} Pa</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">💨 Wind Speed</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Minimum:</span>
+                <span className="font-medium text-blue-600">{windStats.min.toFixed(1)} m/s</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Maximum:</span>
+                <span className="font-medium text-red-600">{windStats.max.toFixed(1)} m/s</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Average:</span>
+                <span className="font-medium">{windStats.avg.toFixed(1)} m/s</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>🌡️ Temperature Trends Over Sols</CardTitle>
+              <CardDescription>
+                Daily minimum, maximum, and average temperatures showing Mars' extreme temperature variations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={formatTemperatureChartData()}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="sol" />
+                    <YAxis />
+                    <Tooltip 
+                      labelFormatter={(value) => `Sol ${value}`}
+                      formatter={(value: number, name: string) => [`${value?.toFixed(1)}°C`, name]}
+                    />
+                    <Legend />
+                    <Area type="monotone" dataKey="max_temp" stackId="1" stroke="#ef4444" fill="#fee2e2" name="Max Temperature" />
+                    <Area type="monotone" dataKey="min_temp" stackId="2" stroke="#3b82f6" fill="#dbeafe" name="Min Temperature" />
+                    <Line type="monotone" dataKey="avg_temp" stroke="#f59e0b" strokeWidth={2} name="Average Temperature" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>📊 Atmospheric Pressure Over Time</CardTitle>
+              <CardDescription>
+                Daily atmospheric pressure measurements showing seasonal and diurnal variations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={formatPressureChartData()}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="sol" />
+                    <YAxis />
+                    <Tooltip 
+                      labelFormatter={(value) => `Sol ${value}`}
+                      formatter={(value: number) => [`${value?.toFixed(1)} Pa`, 'Pressure']}
+                    />
+                    <Legend />
+                    <Line type="monotone" dataKey="pressure" stroke="#8b5cf6" strokeWidth={2} name="Atmospheric Pressure" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>💨 Wind Speed Measurements</CardTitle>
+              <CardDescription>
+                Wind speed variations showing Mars' dynamic atmospheric conditions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={formatWindChartData()}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="sol" />
+                    <YAxis />
+                    <Tooltip 
+                      labelFormatter={(value) => `Sol ${value}`}
+                      formatter={(value: number) => [`${value?.toFixed(1)} m/s`, 'Wind Speed']}
+                    />
+                    <Legend />
+                    <Bar dataKey="wind_speed" fill="#10b981" name="Wind Speed" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>🔬 Temperature vs Pressure Correlation</CardTitle>
+              <CardDescription>
+                Scatter plot showing the relationship between atmospheric temperature and pressure
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart data={formatTempPressureScatterData()}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="temperature" name="Temperature" unit="°C" />
+                    <YAxis dataKey="pressure" name="Pressure" unit="Pa" />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => [
+                        name === 'pressure' ? `${value?.toFixed(1)} Pa` : `${value?.toFixed(1)}°C`,
+                        name === 'pressure' ? 'Pressure' : 'Temperature'
+                      ]}
+                    />
+                    <Legend />
+                    <Scatter name="Sol Data" dataKey="pressure" fill="#f59e0b" />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="text-center text-red-300 text-sm">
+          <p>
+            Data sources: InSight lander (2018-2022), Perseverance rover (2021-present)
+          </p>
+        </div>
       </div>
-
-      {/* InSight Mission Status Alert */}
-      <Alert className="border-amber-200 bg-amber-50">
-        <Info className="h-4 w-4 text-amber-600" />
-        <AlertDescription className="text-amber-800">
-          <strong>InSight Mission Legacy:</strong> NASA's InSight Mars lander concluded its mission in December 2022 
-          after nearly 4 years of groundbreaking science. The data visualized here represents real atmospheric 
-          measurements from {weatherData.mission_info.location}, providing invaluable insights into Martian weather patterns.
-        </AlertDescription>
-      </Alert>
-
-      {/* Mission Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-            <Activity className="h-4 w-4 text-blue-600" />
-            <CardTitle className="text-sm font-medium ml-2">Mission</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{weatherData.mission_info.name}</div>
-            <p className="text-xs text-muted-foreground">{weatherData.mission_info.status}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-            <ThermometerSun className="h-4 w-4 text-red-600" />
-            <CardTitle className="text-sm font-medium ml-2">Location</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{weatherData.mission_info.location}</div>
-            <p className="text-xs text-muted-foreground">
-              {weatherData.mission_info.coordinates.latitude.toFixed(2)}°N, {weatherData.mission_info.coordinates.longitude.toFixed(2)}°E
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-            <Gauge className="h-4 w-4 text-green-600" />
-            <CardTitle className="text-sm font-medium ml-2">Data Period</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{weatherData.mission_info.total_sols} Sols</div>
-            <p className="text-xs text-muted-foreground">
-              {weatherData.mission_info.earth_dates.start} to {weatherData.mission_info.earth_dates.end}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">🌡️ Temperature Range</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Minimum:</span>
-              <span className="font-medium text-blue-600">{tempStats.min.toFixed(1)}°C</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Maximum:</span>
-              <span className="font-medium text-red-600">{tempStats.max.toFixed(1)}°C</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Average:</span>
-              <span className="font-medium">{tempStats.avg.toFixed(1)}°C</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">📊 Pressure Range</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Minimum:</span>
-              <span className="font-medium text-blue-600">{pressureStats.min.toFixed(1)} Pa</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Maximum:</span>
-              <span className="font-medium text-red-600">{pressureStats.max.toFixed(1)} Pa</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Average:</span>
-              <span className="font-medium">{pressureStats.avg.toFixed(1)} Pa</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">💨 Wind Speed</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Minimum:</span>
-              <span className="font-medium text-blue-600">{windStats.min.toFixed(1)} m/s</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Maximum:</span>
-              <span className="font-medium text-red-600">{windStats.max.toFixed(1)} m/s</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Average:</span>
-              <span className="font-medium">{windStats.avg.toFixed(1)} m/s</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts */}
-      <div className="space-y-8">
-        {/* Temperature Trends */}
-        <Card>
-          <CardHeader>
-            <CardTitle>🌡️ Temperature Trends Over Sols</CardTitle>
-            <CardDescription>
-              Daily minimum, maximum, and average temperatures showing Mars' extreme temperature variations
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={formatTemperatureChartData()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="sol" />
-                  <YAxis />
-                  <Tooltip 
-                    labelFormatter={(value) => `Sol ${value}`}
-                    formatter={(value: number, name: string) => [`${value?.toFixed(1)}°C`, name]}
-                  />
-                  <Legend />
-                  <Area type="monotone" dataKey="max_temp" stackId="1" stroke="#ef4444" fill="#fee2e2" name="Max Temperature" />
-                  <Area type="monotone" dataKey="min_temp" stackId="2" stroke="#3b82f6" fill="#dbeafe" name="Min Temperature" />
-                  <Line type="monotone" dataKey="avg_temp" stroke="#f59e0b" strokeWidth={2} name="Average Temperature" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Atmospheric Pressure */}
-        <Card>
-          <CardHeader>
-            <CardTitle>📊 Atmospheric Pressure Over Time</CardTitle>
-            <CardDescription>
-              Daily atmospheric pressure measurements showing seasonal and diurnal variations
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={formatPressureChartData()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="sol" />
-                  <YAxis />
-                  <Tooltip 
-                    labelFormatter={(value) => `Sol ${value}`}
-                    formatter={(value: number) => [`${value?.toFixed(1)} Pa`, 'Pressure']}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="pressure" stroke="#8b5cf6" strokeWidth={2} name="Atmospheric Pressure" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Wind Speed */}
-        <Card>
-          <CardHeader>
-            <CardTitle>💨 Wind Speed Measurements</CardTitle>
-            <CardDescription>
-              Wind speed variations showing Mars' dynamic atmospheric conditions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={formatWindChartData()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="sol" />
-                  <YAxis />
-                  <Tooltip 
-                    labelFormatter={(value) => `Sol ${value}`}
-                    formatter={(value: number) => [`${value?.toFixed(1)} m/s`, 'Wind Speed']}
-                  />
-                  <Legend />
-                  <Bar dataKey="wind_speed" fill="#10b981" name="Wind Speed" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Temperature vs Pressure Correlation */}
-        <Card>
-          <CardHeader>
-            <CardTitle>🔬 Temperature vs Pressure Correlation</CardTitle>
-            <CardDescription>
-              Scatter plot showing the relationship between atmospheric temperature and pressure
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <ScatterChart data={formatTempPressureScatterData()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="temperature" name="Temperature" unit="°C" />
-                  <YAxis dataKey="pressure" name="Pressure" unit="Pa" />
-                  <Tooltip 
-                    formatter={(value: number, name: string) => [
-                      name === 'pressure' ? `${value?.toFixed(1)} Pa` : `${value?.toFixed(1)}°C`,
-                      name === 'pressure' ? 'Pressure' : 'Temperature'
-                    ]}
-                  />
-                  <Legend />
-                  <Scatter name="Sol Data" dataKey="pressure" fill="#f59e0b" />
-                </ScatterChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Footer Note */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50">
-        <CardContent className="pt-6">
-          <div className="text-center space-y-2">
-            <p className="text-sm font-medium text-gray-700">
-              🚀 Data courtesy of NASA's InSight Mars Lander Mission
-            </p>
-            <p className="text-xs text-gray-500">
-              InSight operated from November 2018 to December 2022, providing unprecedented insights into Mars' interior and atmosphere.
-              This weather data represents real measurements from the Martian surface at Elysium Planitia.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 } 

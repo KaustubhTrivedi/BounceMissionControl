@@ -101,11 +101,7 @@ export const getMarsRoverPhotos = async (req: Request, res: Response) => {
 
     res.json(response)
   } catch (error) {
-    console.error(`Error fetching Mars rover photos for ${selectedRover}:`, error)
-    res.status(500).json({
-      error: `Failed to fetch Mars rover photos for ${selectedRover}. The rover may be inactive or data temporarily unavailable.`,
-      timestamp: new Date().toISOString()
-    })
+    throw new Error(`Error fetching Mars rover photos for ${selectedRover}: ${error}`)
   }
 }
 
@@ -166,11 +162,7 @@ export const getLatestRoverPhotos = async (req: Request, res: Response) => {
 
     res.json(response)
   } catch (error) {
-    console.error('Error fetching latest rover photos:', error)
-    res.status(500).json({
-      error: 'Failed to fetch latest rover photos. Data may be temporarily unavailable.',
-      timestamp: new Date().toISOString()
-    })
+    throw new Error(`Error fetching latest rover photos: ${error}`)
   }
 }
 
@@ -180,11 +172,7 @@ export const getPerseveranceWeatherData = async (req: Request, res: Response) =>
     const weatherData = await fetchPerseveranceWeatherData()
     res.json(weatherData)
   } catch (error) {
-    console.error('Error fetching Perseverance weather data:', error)
-    res.status(500).json({
-      error: 'Failed to fetch Perseverance weather data. Data may be temporarily unavailable.',
-      timestamp: new Date().toISOString()
-    })
+    throw new Error(`Error fetching Perseverance weather data: ${error}`)
   }
 }
 
@@ -194,11 +182,7 @@ export const getMarsWeather = async (req: Request, res: Response) => {
     const weatherData = await fetchPerseveranceWeatherData()
     res.json(weatherData)
   } catch (error) {
-    console.error('Error fetching Mars weather data:', error)
-    res.status(500).json({
-      error: 'Failed to fetch Mars weather data. Data may be temporarily unavailable.',
-      timestamp: new Date().toISOString()
-    })
+    throw new Error(`Error fetching Mars weather data: ${error}`)
   }
 }
 
@@ -208,11 +192,7 @@ export const getMultiPlanetaryDashboardData = async (req: Request, res: Response
     const dashboardData = await getMultiPlanetaryDashboard()
     res.json(dashboardData)
   } catch (error) {
-    console.error('Error fetching multi-planetary dashboard data:', error)
-    res.status(500).json({
-      error: 'Failed to fetch multi-planetary dashboard data',
-      timestamp: new Date().toISOString()
-    })
+    throw new Error(`Error fetching multi-planetary dashboard data: ${error}`)
   }
 }
 

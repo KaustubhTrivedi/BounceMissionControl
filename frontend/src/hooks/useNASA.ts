@@ -19,12 +19,12 @@ import {
 // Query Keys
 export const nasaQueryKeys = {
   apod: (date?: string) => ['nasa', 'apod', date] as const,
-  marsRover: (params: Record<string, any>) => ['nasa', 'mars-rover', params] as const,
-  marsRoverByRover: (rover: string, params: Record<string, any>) => ['nasa', 'mars-rover', rover, params] as const,
+  marsRover: (params: Record<string, unknown>) => ['nasa', 'mars-rover', params] as const,
+  marsRoverByRover: (rover: string, params: Record<string, unknown>) => ['nasa', 'mars-rover', rover, params] as const,
   marsRoverLatest: (rover?: string) => ['nasa', 'mars-rover', 'latest', rover] as const,
   roverManifest: (rover: string) => ['nasa', 'rover-manifest', rover] as const,
   mostActiveRover: () => ['nasa', 'most-active-rover'] as const,
-  latestRoverPhotos: (params: Record<string, any>) => ['nasa', 'latest-rover-photos', params] as const,
+  latestRoverPhotos: (params: Record<string, unknown>) => ['nasa', 'latest-rover-photos', params] as const,
   multiPlanetaryDashboard: () => ['nasa', 'multi-planetary-dashboard'] as const,
   historicMarsWeather: () => ['nasa', 'historic-mars-weather'] as const,
 }

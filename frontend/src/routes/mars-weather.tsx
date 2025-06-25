@@ -291,7 +291,7 @@ function MarsWeatherPage() {
                   <YAxis />
                   <Tooltip 
                     labelFormatter={(value) => `Sol ${value}`}
-                    formatter={(value: any, name: string) => [`${value?.toFixed(1)}°C`, name]}
+                    formatter={(value: number, name: string) => [`${value?.toFixed(1)}°C`, name]}
                   />
                   <Legend />
                   <Area type="monotone" dataKey="max_temp" stackId="1" stroke="#ef4444" fill="#fee2e2" name="Max Temperature" />
@@ -320,7 +320,7 @@ function MarsWeatherPage() {
                   <YAxis />
                   <Tooltip 
                     labelFormatter={(value) => `Sol ${value}`}
-                    formatter={(value: any) => [`${value?.toFixed(1)} Pa`, 'Pressure']}
+                    formatter={(value: number) => [`${value?.toFixed(1)} Pa`, 'Pressure']}
                   />
                   <Legend />
                   <Line type="monotone" dataKey="pressure" stroke="#8b5cf6" strokeWidth={2} name="Atmospheric Pressure" />
@@ -347,7 +347,7 @@ function MarsWeatherPage() {
                   <YAxis />
                   <Tooltip 
                     labelFormatter={(value) => `Sol ${value}`}
-                    formatter={(value: any) => [`${value?.toFixed(1)} m/s`, 'Wind Speed']}
+                    formatter={(value: number) => [`${value?.toFixed(1)} m/s`, 'Wind Speed']}
                   />
                   <Legend />
                   <Bar dataKey="wind_speed" fill="#10b981" name="Wind Speed" />
@@ -373,7 +373,7 @@ function MarsWeatherPage() {
                   <XAxis dataKey="temperature" name="Temperature" unit="°C" />
                   <YAxis dataKey="pressure" name="Pressure" unit="Pa" />
                   <Tooltip 
-                    formatter={(value: any, name: string) => [
+                    formatter={(value: number, name: string) => [
                       name === 'pressure' ? `${value?.toFixed(1)} Pa` : `${value?.toFixed(1)}°C`,
                       name === 'pressure' ? 'Pressure' : 'Temperature'
                     ]}

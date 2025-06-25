@@ -3,6 +3,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import { configureRoutes } from './routes'
 import { errorHandler, notFoundHandler } from './middleware/error-handler'
+import appConfig from './config/app.config'
 
 // Load environment variables
 dotenv.config()

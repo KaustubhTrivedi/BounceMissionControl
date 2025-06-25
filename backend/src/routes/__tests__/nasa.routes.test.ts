@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import request from 'supertest'
+import { Application } from 'express'
 import { createTestServer } from '../../test/utils'
 
 // Mock the helper functions
@@ -12,7 +13,7 @@ vi.mock('../../helpers/nasa-api.helper', () => ({
 }))
 
 describe('NASA Routes', () => {
-  let app: any
+  let app: Application
 
   beforeEach(() => {
     vi.clearAllMocks()

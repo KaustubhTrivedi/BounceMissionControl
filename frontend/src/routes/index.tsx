@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 
+type FilterKey = 'all' | 'planets' | 'moons' | 'asteroids';
+
 export const Route = createFileRoute('/')({
   component: Index,
 })

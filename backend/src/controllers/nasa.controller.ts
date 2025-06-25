@@ -11,8 +11,7 @@ import {
 import { isValidDate, isValidSol, isNonEmptyString } from '../utils/validators'
 import { MarsRoverAPIResponse } from '../models/nasa.models'
 import { asyncHandler } from '../utils/async-handler'
-
-const nasaConfig = require('../config/nasa.config')
+import nasaConfig from '../config/nasa.config'
 
 // Health check controller
 export const healthCheck = (req: Request, res: Response) => {

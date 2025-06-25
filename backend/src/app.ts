@@ -3,12 +3,10 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import { configureRoutes } from './routes'
 import { errorHandler, notFoundHandler } from './middleware/error-handler'
+import appConfig from './config/app.config'
 
 // Load environment variables
 dotenv.config()
-
-// Import configurations
-const appConfig = require('./config/app.config')
 
 // Create Express application
 const app = express()

@@ -7,7 +7,7 @@ export const errorHandler: ErrorRequestHandler = (
   error: unknown, 
   req: Request, 
   res: Response, 
-  next: NextFunction
+  _next: NextFunction
 ) => {
   console.error('Global error handler:', error)
   
@@ -39,7 +39,7 @@ export const errorHandler: ErrorRequestHandler = (
 }
 
 // 404 handler for undefined routes
-export const notFoundHandler = (req: Request, res: Response, next: NextFunction) => {
+export const notFoundHandler = (req: Request, res: Response, _next: NextFunction) => {
   res.status(404).json({
     error: 'Route not found',
     timestamp: new Date().toISOString(),

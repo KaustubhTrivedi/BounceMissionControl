@@ -268,7 +268,7 @@ describe('API Service', () => {
         callback()
         return 1
       })
-      global.setTimeout = mockSetTimeout as any
+      global.setTimeout = mockSetTimeout as unknown as typeof global.setTimeout
 
       // Simulate fetch abort due to timeout
       mockFetch.mockImplementationOnce(() => Promise.reject(Object.assign(new Error('Request timeout'), { name: 'AbortError' })))
@@ -300,7 +300,7 @@ describe('API Service', () => {
         callback()
         return 1
       })
-      global.setTimeout = mockSetTimeout as any
+      global.setTimeout = mockSetTimeout as unknown as typeof global.setTimeout
 
       mockFetch.mockRejectedValueOnce(new DOMException('AbortError', 'AbortError'))
 

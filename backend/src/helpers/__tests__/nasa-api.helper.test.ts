@@ -1,5 +1,9 @@
 import { vi } from 'vitest'
+
+// Create mock API client
 const mockApiClient = { get: vi.fn() }
+
+// Mock axios
 vi.mock('axios', () => ({
   default: {
     create: vi.fn(() => mockApiClient)
@@ -21,7 +25,7 @@ vi.mock('../../config/nasa.config', () => ({
   }
 }))
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import {
   fetchAPODData,
   fetchMarsRoverPhotos,

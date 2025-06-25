@@ -3,13 +3,15 @@ import { useState } from 'react'
 import { useMultiPlanetaryDashboard } from '@/hooks/useNASA'
 import PlanetCard from '@/components/PlanetCard'
 
+type FilterKey = 'all' | 'planets' | 'moons' | 'asteroids';
+
 export const Route = createFileRoute('/')({
   component: Index,
 })
 
 function Index() {
   const { data: dashboardData, isLoading, error } = useMultiPlanetaryDashboard()
-  const [activeFilter, setActiveFilter] = useState<'all' | 'planets' | 'moons' | 'asteroids'>('all')
+  const [activeFilter, setActiveFilter] = useState<FilterKey>('all')
 
   // Filter planets based on active filter
   const filteredPlanets = dashboardData?.planets.filter(planet => {
@@ -116,7 +118,7 @@ function Index() {
                 ].map((filter) => (
                   <button
                     key={filter.key}
-                    onClick={() => setActiveFilter(filter.key as any)}
+                    onClick={() => setActiveFilter(filter.key as FilterKey)}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                       activeFilter === filter.key
                         ? 'bg-white/20 text-white border border-white/30'

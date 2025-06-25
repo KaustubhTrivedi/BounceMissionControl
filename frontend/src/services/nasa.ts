@@ -41,7 +41,7 @@ export interface MarsRoverPhoto {
 export interface MarsRoverResponse {
   photos: MarsRoverPhoto[]
   total_photos?: number
-  rover?: any
+  rover?: MarsRoverPhoto['rover']
   sol?: string | number
   selected_rover?: string
 }

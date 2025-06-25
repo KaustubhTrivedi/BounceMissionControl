@@ -3,15 +3,38 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Alert, AlertDescription } from '../components/ui/alert'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar, ScatterChart, Scatter } from 'recharts'
 import { Info, Activity, AlertTriangle, ThermometerSun, Gauge } from 'lucide-react'
-import { useHistoricMarsWeather } from '../hooks/useNASA'
+import { useHistoricMarsWeather, useSimulatedMarsWeather } from '../hooks/useNASA'
+import { DataToggle } from '../components/DataToggle'
+import { useState } from 'react'
 
 export const Route = createFileRoute('/mars-weather')({
   component: MarsWeatherPage,
 })
 
 function MarsWeatherPage() {
-  const { data: weatherResponse, isLoading: loading, error } = useHistoricMarsWeather()
+  const [isSimulated, setIsSimulated] = useState(false)
+  
+  const { 
+    data: realWeatherResponse, 
+    isLoading: realLoading, 
+    error: realError 
+  } = useHistoricMarsWeather()
+  
+  const { 
+    data: simulatedWeatherResponse, 
+    isLoading: simulatedLoading, 
+    error: simulatedError 
+  } = useSimulatedMarsWeather()
+
+  // Use the appropriate data based on toggle state
+  const weatherResponse = isSimulated ? simulatedWeatherResponse : realWeatherResponse
+  const loading = isSimulated ? simulatedLoading : realLoading
+  const error = isSimulated ? simulatedError : realError
   const weatherData = weatherResponse?.data
+
+  const handleToggle = (simulated: boolean) => {
+    setIsSimulated(simulated)
+  }
 
   const formatTemperatureChartData = () => {
     if (!weatherData?.temperature_data) return []
@@ -159,13 +182,29 @@ function MarsWeatherPage() {
         </p>
       </div>
 
+      {/* Data Source Toggle */}
+      <DataToggle 
+        isSimulated={isSimulated}
+        onToggle={handleToggle}
+        isLoading={loading}
+      />
+
       {/* InSight Mission Status Alert */}
       <Alert className="border-amber-200 bg-amber-50">
         <Info className="h-4 w-4 text-amber-600" />
         <AlertDescription className="text-amber-800">
-          <strong>InSight Mission Legacy:</strong> NASA's InSight Mars lander concluded its mission in December 2022 
-          after nearly 4 years of groundbreaking science. The data visualized here represents real atmospheric 
-          measurements from {weatherData.mission_info.location}, providing invaluable insights into Martian weather patterns.
+          {isSimulated ? (
+            <>
+              <strong>Simulated Data Mode:</strong> This visualization uses generated Mars weather data for demonstration purposes. 
+              The data patterns are based on real Martian atmospheric conditions but are not actual measurements from NASA missions.
+            </>
+          ) : (
+            <>
+              <strong>InSight Mission Legacy:</strong> NASA's InSight Mars lander concluded its mission in December 2022 
+              after nearly 4 years of groundbreaking science. The data visualized here represents real atmospheric 
+              measurements from {weatherData?.mission_info?.location || 'Elysium Planitia'}, providing invaluable insights into Martian weather patterns.
+            </>
+          )}
         </AlertDescription>
       </Alert>
 
@@ -392,11 +431,20 @@ function MarsWeatherPage() {
         <CardContent className="pt-6">
           <div className="text-center space-y-2">
             <p className="text-sm font-medium text-gray-700">
-              🚀 Data courtesy of NASA's InSight Mars Lander Mission
+              {isSimulated ? (
+                '🎮 Simulated Mars Weather Data for Educational Purposes'
+              ) : (
+                '🚀 Data courtesy of NASA\'s InSight Mars Lander Mission'
+              )}
             </p>
             <p className="text-xs text-gray-500">
-              InSight operated from November 2018 to December 2022, providing unprecedented insights into Mars' interior and atmosphere.
-              This weather data represents real measurements from the Martian surface at Elysium Planitia.
+              {isSimulated ? (
+                'This simulated data demonstrates typical Martian weather patterns based on scientific models and real mission data. ' +
+                'It provides a realistic representation of temperature, pressure, and wind conditions on Mars for educational and demonstration purposes.'
+              ) : (
+                'InSight operated from November 2018 to December 2022, providing unprecedented insights into Mars\' interior and atmosphere. ' +
+                'This weather data represents real measurements from the Martian surface at Elysium Planitia.'
+              )}
             </p>
           </div>
         </CardContent>

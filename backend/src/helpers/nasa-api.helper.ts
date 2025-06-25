@@ -995,8 +995,9 @@ export const getMultiPlanetaryDashboard = async (): Promise<MultiPlanetDashboard
 // This function attempts to fetch from InSight first, then falls back to a realistic simulation.
 export const fetchHistoricMarsWeatherData = async (): Promise<HistoricWeatherData> => {
   try {
+    // Try to fetch real InSight data first
     const insightData = await fetchInSightWeatherData()
-    if (insightData) {
+    if (insightData && Object.keys(insightData).length > 0) {
       console.log('Processing historic data from InSight mission...')
       return processInsightDataForCharts(insightData)
     }
@@ -1007,6 +1008,12 @@ export const fetchHistoricMarsWeatherData = async (): Promise<HistoricWeatherDat
     )
   }
 
+  console.log('Generating simulated historic Mars weather data...')
+  return generateHistoricalSimulationData()
+}
+
+// Fetch simulated Mars weather data only
+export const fetchSimulatedMarsWeatherData = async (): Promise<HistoricWeatherData> => {
   console.log('Generating simulated historic Mars weather data...')
   return generateHistoricalSimulationData()
 }

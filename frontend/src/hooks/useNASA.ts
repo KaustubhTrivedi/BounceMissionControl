@@ -27,6 +27,7 @@ export const nasaQueryKeys = {
   latestRoverPhotos: (params: Record<string, any>) => ['nasa', 'latest-rover-photos', params] as const,
   multiPlanetaryDashboard: () => ['nasa', 'multi-planetary-dashboard'] as const,
   historicMarsWeather: () => ['nasa', 'historic-mars-weather'] as const,
+  simulatedMarsWeather: () => ['nasa', 'simulated-mars-weather'] as const,
 }
 
 // APOD Hook
@@ -193,6 +194,19 @@ export const useHistoricMarsWeather = (
     queryKey: nasaQueryKeys.historicMarsWeather(),
     queryFn: () => nasaApi.getHistoricMarsWeather(),
     staleTime: 1000 * 60 * 60, // 1 hour (historic data doesn't change)
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    ...options,
+  })
+}
+
+// Hook to get simulated Mars weather data
+export const useSimulatedMarsWeather = (
+  options?: Omit<UseQueryOptions<HistoricMarsWeatherResponse>, 'queryKey' | 'queryFn'>
+) => {
+  return useQuery({
+    queryKey: nasaQueryKeys.simulatedMarsWeather(),
+    queryFn: () => nasaApi.getSimulatedMarsWeather(),
+    staleTime: 1000 * 60 * 60, // 1 hour (simulated data doesn't change)
     gcTime: 1000 * 60 * 60 * 24, // 24 hours
     ...options,
   })

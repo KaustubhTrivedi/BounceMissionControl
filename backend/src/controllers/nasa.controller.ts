@@ -10,7 +10,8 @@ import {
   fetchTechPortProjects,
   fetchTechPortProject,
   getTechPortCategories,
-  getTechPortAnalytics
+  getTechPortAnalytics,
+  fetchSimulatedMarsWeatherData
 } from '../helpers/nasa-api.helper'
 import { isValidDate, isValidSol, isNonEmptyString } from '../utils/validators'
 import { MarsRoverAPIResponse, TechPortProject } from '../models/nasa.models'
@@ -224,6 +225,17 @@ export const getHistoricMarsWeather = asyncHandler(async (req: Request, res: Res
     success: true,
     data: historicData,
     message: 'Historic Mars weather data retrieved successfully'
+  })
+})
+
+// Get simulated Mars weather data for visualization
+export const getSimulatedMarsWeather = asyncHandler(async (req: Request, res: Response) => {
+  const simulatedData = await fetchSimulatedMarsWeatherData()
+  
+  res.status(200).json({
+    success: true,
+    data: simulatedData,
+    message: 'Simulated Mars weather data retrieved successfully'
   })
 })
 

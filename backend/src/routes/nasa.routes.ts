@@ -9,6 +9,7 @@ import {
   getPerseveranceWeatherData,
   getMultiPlanetaryDashboardData,
   getHistoricMarsWeather,
+  getSimulatedMarsWeather,
   getTechPortProjects,
   getTechPortProject,
   getTechPortCategoriesEndpoint,
@@ -40,6 +41,9 @@ router.get('/perseverance-weather', asyncHandler(getPerseveranceWeatherData))
 
 // Mars weather endpoint
 router.get('/mars-weather', getHistoricMarsWeather)
+
+// Simulated Mars weather endpoint
+router.get('/mars-weather/simulated', getSimulatedMarsWeather)
 
 // Multi-planetary dashboard endpoint
 router.get('/multi-planetary-dashboard', asyncHandler(getMultiPlanetaryDashboardData))

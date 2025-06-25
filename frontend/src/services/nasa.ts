@@ -319,6 +319,7 @@ const endpoints = {
   latestRoverPhotos: '/api/latest-rover-photos',
   perseveranceWeather: '/api/perseverance-weather',
   marsWeather: '/api/mars-weather',
+  marsWeatherSimulated: '/api/mars-weather/simulated',
   multiPlanetaryDashboard: '/api/multi-planetary-dashboard',
   techPortProjects: '/api/techport/projects',
   techPortProject: (projectId: string) => `/api/techport/projects/${projectId}`,
@@ -388,6 +389,11 @@ export const nasaApi = {
   // Get historic Mars weather data (InSight legacy data)
   getHistoricMarsWeather: async (): Promise<HistoricMarsWeatherResponse> => {
     return api.get<HistoricMarsWeatherResponse>(endpoints.marsWeather)
+  },
+
+  // Get simulated Mars weather data
+  getSimulatedMarsWeather: async (): Promise<HistoricMarsWeatherResponse> => {
+    return api.get<HistoricMarsWeatherResponse>(endpoints.marsWeatherSimulated)
   },
 
   // TechPort API functions

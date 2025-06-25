@@ -159,14 +159,15 @@ export const getMostActiveRover = async (): Promise<string> => {
           rover,
           maxSol: manifest.photo_manifest.max_sol,
           maxDate: manifest.photo_manifest.max_date,
-          status: manifest.photo_manifest.status
+          status: manifest.photo_manifest.status,
+          name: manifest.photo_manifest.name
         }
       })
     )
 
     // Filter successful responses and active rovers
     const activeRovers = manifests
-      .filter((result): result is PromiseFulfilledResult<{rover: string; maxSol: number; maxDate: string; status: string}> => result.status === 'fulfilled')
+      .filter((result): result is PromiseFulfilledResult<{rover: string; maxSol: number; maxDate: string; status: string; name: string}> => result.status === 'fulfilled')
       .map(result => result.value)
       .filter(rover => rover.status === 'active')
 
@@ -179,7 +180,7 @@ export const getMostActiveRover = async (): Promise<string> => {
       new Date(current.maxDate) > new Date(prev.maxDate) ? current : prev
     )
 
-    return mostActive.rover
+    return mostActive.name.toLowerCase()
   } catch (error) {
     console.error('Error finding most active rover:', error)
     return 'curiosity' // Fallback

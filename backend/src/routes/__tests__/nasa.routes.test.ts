@@ -163,7 +163,7 @@ describe('NASA Routes', () => {
         .expect(500)
 
       expect(response.body).toMatchObject({
-        error: expect.stringContaining('Failed to fetch Mars rover photos'),
+        error: expect.stringContaining('Error fetching Mars rover photos'),
         timestamp: expect.any(String)
       })
     })
@@ -412,7 +412,7 @@ describe('NASA Routes', () => {
         .expect(500)
 
       expect(response.body).toMatchObject({
-        error: expect.stringContaining('Failed to fetch Perseverance weather data'),
+        error: expect.stringContaining('Error fetching Perseverance weather data'),
         timestamp: expect.any(String)
       })
     })

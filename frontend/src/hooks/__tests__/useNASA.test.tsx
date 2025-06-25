@@ -89,7 +89,7 @@ describe('useNASA Hooks', () => {
       const mockGetAPOD = vi.mocked(nasaApi.nasaApi.getAPOD)
       mockGetAPOD.mockResolvedValue(mockAPODData)
 
-      const testDate = new Date('2024-01-01')
+      const testDate = '2024-01-01'
       const { result } = renderHook(() => useAPOD(testDate), {
         wrapper: createWrapper(),
       })

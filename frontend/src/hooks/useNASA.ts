@@ -31,17 +31,23 @@ export const useAPOD = (date?: string) => {
 }
 
 // Mars Rover Photos Hook
-export const useMarsRoverPhotos = (params: {
-  rover?: string
-  sol?: number
-  camera?: string
-  page?: number
-} = {}) => {
+export const useMarsRoverPhotos = (
+  params: {
+    rover?: string
+    sol?: number
+    camera?: string
+    page?: number
+  } = {},
+  options?: {
+    enabled?: boolean
+  }
+) => {
   return useQuery({
     queryKey: [QUERY_KEYS.marsRoverPhotos, params],
     queryFn: () => nasaApi.getMarsRoverPhotos(params),
     staleTime: 1000 * 60 * 15,
     gcTime: 1000 * 60 * 60 * 2,
+    ...options,
   })
 }
 

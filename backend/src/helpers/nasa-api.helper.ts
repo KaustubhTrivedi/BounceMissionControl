@@ -116,26 +116,25 @@ export const fetchMarsRoverPhotos = async (
   sol?: string
 ): Promise<MarsRoverResponse> => {
   try {
-    let endpoint = `${nasaConfig.endpoints.marsRover}/${rover}/photos`
+    const endpoint = sol 
+      ? `${nasaConfig.endpoints.marsRover}/${rover}/photos`
+      : `${nasaConfig.endpoints.marsRover}/${rover}/latest_photos`
+    
     const params: APIParams = {}
-
     if (sol) {
       params.sol = sol
-    } else {
-      // Use latest photos endpoint if no sol specified
-      endpoint = `${nasaConfig.endpoints.marsRover}/${rover}/latest_photos`
     }
-
+    
     const response = await nasaApiClient.get<MarsRoverResponse>(endpoint, { params })
     
     // Ensure response has valid structure
     if (!response.data || !Array.isArray(response.data.photos)) {
-      throw new Error(`Invalid response structure for rover ${rover}`)
+      return { photos: [] }
     }
     
     return response.data
   } catch (error) {
-    throw new Error(`Error fetching photos for rover ${rover}: ${error}`)
+    return { photos: [] }
   }
 }
 
@@ -640,13 +639,12 @@ Date.prototype.getDayOfYear = function() {
 // Check NASA API health
 export const checkNASAApiHealth = async (): Promise<boolean> => {
   try {
-    await nasaApiClient.get(nasaConfig.endpoints.apod, {
-      timeout: 5000,
-      params: { date: '2024-01-01' } // Use a specific date for health check
+    const response = await nasaApiClient.get(nasaConfig.endpoints.apod, {
+      params: { count: 1 }
     })
     return true
   } catch (error) {
-    throw new Error(`NASA API health check failed: ${error}`)
+    return false
   }
 }
 

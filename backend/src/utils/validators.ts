@@ -4,15 +4,22 @@ export const isValidDate = (dateString: string): boolean => {
   if (!dateRegex.test(dateString)) {
     return false
   }
-  
+  // Check if date is valid calendar date
+  const [year, month, day] = dateString.split('-').map(Number)
   const date = new Date(dateString)
-  return date instanceof Date && !isNaN(date.getTime())
+  if (!(date instanceof Date) || isNaN(date.getTime())) return false
+  // Month is 0-indexed in JS Date
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() + 1 === month &&
+    date.getUTCDate() === day
+  )
 }
 
 // Sol validation for Mars Rover endpoint
 export const isValidSol = (solString: string): boolean => {
-  const solNumber = parseInt(solString, 10)
-  return !isNaN(solNumber) && solNumber >= 0
+  // Only allow non-negative integers (no decimals)
+  return /^\d+$/.test(solString) && Number.isInteger(Number(solString)) && Number(solString) >= 0
 }
 
 // Generic string validation

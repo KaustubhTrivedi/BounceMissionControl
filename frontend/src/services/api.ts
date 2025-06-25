@@ -34,7 +34,7 @@ const defaultConfig = {
 }
 
 // Helper function to build URL with query parameters
-function buildUrl(endpoint: string, params?: Record<string, any>): string {
+function buildUrl(endpoint: string, params?: Record<string, unknown>): string {
   // Handle absolute URLs
   const fullUrl = endpoint.startsWith('http') ? endpoint : getApiUrl(endpoint)
   
@@ -51,7 +51,7 @@ function buildUrl(endpoint: string, params?: Record<string, any>): string {
 }
 
 // Generic request function
-async function request<T = any>(
+async function request<T = unknown>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
@@ -97,7 +97,7 @@ async function request<T = any>(
       throw error
     }
     
-    if ((error instanceof DOMException && error.name === 'AbortError') || (typeof error === 'object' && error !== null && 'name' in error && (error as any).name === 'AbortError')) {
+    if ((error instanceof DOMException && error.name === 'AbortError') || (typeof error === 'object' && error !== null && 'name' in error && (error as { name?: string }).name === 'AbortError')) {
       throw new ApiError(
         'Request timeout',
         408,
@@ -109,8 +109,8 @@ async function request<T = any>(
     if (typeof error === 'object' && error !== null && 'status' in error && 'statusText' in error) {
       throw new ApiError(
         error instanceof Error ? error.message : 'Request failed',
-        (error as any).status,
-        (error as any).statusText,
+        (error as { status: number }).status,
+        (error as { statusText: string }).statusText,
         url
       )
     }
@@ -126,12 +126,12 @@ async function request<T = any>(
 
 // HTTP methods
 export const api = {
-  get: <T = any>(endpoint: string, params?: Record<string, any>, options?: RequestOptions): Promise<T> => {
+  get: <T = unknown>(endpoint: string, params?: Record<string, unknown>, options?: RequestOptions): Promise<T> => {
     const url = buildUrl(endpoint, params)
     return request<T>(url, { ...options, method: 'GET' })
   },
 
-  post: <T = any>(endpoint: string, data?: any, options?: RequestOptions): Promise<T> => {
+  post: <T = unknown>(endpoint: string, data?: unknown, options?: RequestOptions): Promise<T> => {
     return request<T>(endpoint, {
       ...options,
       method: 'POST',
@@ -139,7 +139,7 @@ export const api = {
     })
   },
 
-  put: <T = any>(endpoint: string, data?: any, options?: RequestOptions): Promise<T> => {
+  put: <T = unknown>(endpoint: string, data?: unknown, options?: RequestOptions): Promise<T> => {
     return request<T>(endpoint, {
       ...options,
       method: 'PUT',
@@ -147,7 +147,7 @@ export const api = {
     })
   },
 
-  patch: <T = any>(endpoint: string, data?: any, options?: RequestOptions): Promise<T> => {
+  patch: <T = unknown>(endpoint: string, data?: unknown, options?: RequestOptions): Promise<T> => {
     return request<T>(endpoint, {
       ...options,
       method: 'PATCH',
@@ -155,7 +155,7 @@ export const api = {
     })
   },
 
-  delete: <T = any>(endpoint: string, options?: RequestOptions): Promise<T> => {
+  delete: <T = unknown>(endpoint: string, options?: RequestOptions): Promise<T> => {
     return request<T>(endpoint, { ...options, method: 'DELETE' })
   },
 }

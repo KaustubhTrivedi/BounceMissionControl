@@ -1,10 +1,14 @@
 import { vi } from 'vitest'
-const mockApiClient = { get: vi.fn() }
-vi.mock('axios', () => ({
-  default: {
-    create: vi.fn(() => mockApiClient)
+
+// Mock axios with a factory function
+vi.mock('axios', () => {
+  const mockApiClient = { get: vi.fn() }
+  return {
+    default: {
+      create: vi.fn(() => mockApiClient)
+    }
   }
-}))
+})
 
 // Mock the NASA config
 vi.mock('../../config/nasa.config', () => ({
@@ -21,7 +25,8 @@ vi.mock('../../config/nasa.config', () => ({
   }
 }))
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
+import axios from 'axios'
 import {
   fetchAPODData,
   fetchMarsRoverPhotos,
@@ -29,6 +34,9 @@ import {
   getMostActiveRover,
   checkNASAApiHealth
 } from '../nasa-api.helper'
+
+// Get the mock API client from the mocked axios
+const mockApiClient = (axios.create as any)()
 
 beforeEach(() => {
   vi.clearAllMocks()

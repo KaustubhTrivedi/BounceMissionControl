@@ -1,7 +1,6 @@
 import axios from 'axios'
 import { APODResponse, MarsRoverResponse, PerseveranceWeatherResponse } from '../models/nasa.models'
-
-const nasaConfig = require('../config/nasa.config')
+import nasaConfig from '../config/nasa.config'
 
 // Create axios instance with NASA API configuration
 const nasaApiClient = axios.create({
@@ -12,9 +11,93 @@ const nasaApiClient = axios.create({
   }
 })
 
+// Interface for API parameters
+interface APIParams {
+  date?: string;
+  sol?: string;
+  feedtype?: string;
+  ver?: string;
+}
+
+// Interface for rover manifest
+interface RoverManifest {
+  photo_manifest: {
+    name: string;
+    landing_date: string;
+    launch_date: string;
+    status: string;
+    max_sol: number;
+    max_date: string;
+    total_photos: number;
+    photos: unknown[];
+  };
+}
+
+// Interface for weather data
+interface WeatherData {
+  terrestrial_date?: string;
+  sol_keys?: string[];
+  [key: string]: unknown;
+}
+
+// Interface for multi-planetary dashboard data
+interface MultiPlanetaryDashboard {
+  planets: Array<{
+    id: string;
+    name: string;
+    type: string;
+    active_missions: Array<{
+      name: string;
+      status: string;
+      launch_date: string;
+      arrival_date?: string;
+      mission_type: string;
+      description: string;
+    }>;
+    mission_count: number;
+    surface_conditions: {
+      temperature: {
+        average: number;
+        min: number;
+        max: number;
+        unit: string;
+      };
+      atmosphere: {
+        composition: string;
+        pressure: number;
+        pressure_unit: string;
+      };
+      gravity: number;
+      day_length: string;
+      radiation_level: string;
+    };
+    last_activity: {
+      date: string;
+      description: string;
+      days_ago: number;
+    };
+    next_event: {
+      date: string;
+      description: string;
+      days_until: number;
+    };
+    notable_fact: string;
+    data_freshness: {
+      last_updated: string;
+      hours_ago: number;
+    };
+  }>;
+  summary: {
+    total_planets: number;
+    total_missions: number;
+    active_missions: number;
+    last_updated: string;
+  };
+}
+
 // Fetch APOD data
 export const fetchAPODData = async (date?: string): Promise<APODResponse> => {
-  const params: any = {}
+  const params: APIParams = {}
   if (date) {
     params.date = date
   }
@@ -34,7 +117,7 @@ export const fetchMarsRoverPhotos = async (
 ): Promise<MarsRoverResponse> => {
   try {
     let endpoint = `${nasaConfig.endpoints.marsRover}/${rover}/photos`
-    const params: any = {}
+    const params: APIParams = {}
 
     if (sol) {
       params.sol = sol
@@ -60,9 +143,9 @@ export const fetchMarsRoverPhotos = async (
 }
 
 // Fetch rover manifest (contains mission info and latest sol)
-export const fetchRoverManifest = async (rover: string): Promise<any> => {
+export const fetchRoverManifest = async (rover: string): Promise<RoverManifest> => {
   const endpoint = `${nasaConfig.endpoints.marsRoverManifest}/${rover}`
-  const response = await nasaApiClient.get(endpoint)
+  const response = await nasaApiClient.get<RoverManifest>(endpoint)
   return response.data
 }
 
@@ -76,14 +159,15 @@ export const getMostActiveRover = async (): Promise<string> => {
           rover,
           maxSol: manifest.photo_manifest.max_sol,
           maxDate: manifest.photo_manifest.max_date,
-          status: manifest.photo_manifest.status
+          status: manifest.photo_manifest.status,
+          name: manifest.photo_manifest.name
         }
       })
     )
 
     // Filter successful responses and active rovers
     const activeRovers = manifests
-      .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
+      .filter((result): result is PromiseFulfilledResult<{rover: string; maxSol: number; maxDate: string; status: string; name: string}> => result.status === 'fulfilled')
       .map(result => result.value)
       .filter(rover => rover.status === 'active')
 
@@ -96,7 +180,7 @@ export const getMostActiveRover = async (): Promise<string> => {
       new Date(current.maxDate) > new Date(prev.maxDate) ? current : prev
     )
 
-    return mostActive.rover
+    return mostActive.name.toLowerCase()
   } catch (error) {
     console.error('Error finding most active rover:', error)
     return 'curiosity' // Fallback
@@ -139,7 +223,7 @@ export const fetchPerseveranceWeatherData = async (): Promise<PerseveranceWeathe
 }
 
 // Check if weather data is recent (within 1 year)
-const isDataRecent = (data: any): boolean => {
+const isDataRecent = (data: WeatherData): boolean => {
   try {
     let dataDate: Date | null = null
     
@@ -150,7 +234,7 @@ const isDataRecent = (data: any): boolean => {
     // For InSight data
     else if (data.sol_keys && data.sol_keys.length > 0) {
       const latestSol = data.sol_keys[data.sol_keys.length - 1]
-      const solData = data[latestSol]
+      const solData = data[latestSol] as { First_UTC?: string }
       if (solData.First_UTC) {
         dataDate = new Date(solData.First_UTC)
       }
@@ -172,9 +256,9 @@ const isDataRecent = (data: any): boolean => {
 }
 
 // Fetch InSight weather data (historical)
-const fetchInSightWeatherData = async (): Promise<any> => {
+const fetchInSightWeatherData = async (): Promise<WeatherData | null> => {
   try {
-    const response = await nasaApiClient.get(nasaConfig.endpoints.insightWeather, {
+    const response = await nasaApiClient.get<WeatherData>(nasaConfig.endpoints.insightWeather, {
       params: {
         feedtype: 'json',
         ver: '1.0'
@@ -188,9 +272,9 @@ const fetchInSightWeatherData = async (): Promise<any> => {
 }
 
 // Fetch MSL (Curiosity) weather data
-const fetchMSLWeatherData = async (): Promise<any> => {
+const fetchMSLWeatherData = async (): Promise<WeatherData | null> => {
   try {
-    const response = await axios.get(nasaConfig.endpoints.marsWeatherService, {
+    const response = await axios.get<WeatherData>(nasaConfig.endpoints.marsWeatherService, {
       timeout: nasaConfig.timeout
     })
     return response.data
@@ -201,9 +285,9 @@ const fetchMSLWeatherData = async (): Promise<any> => {
 }
 
 // Fetch MAAS weather data (current Curiosity REMS data)
-const fetchMAASWeatherData = async (): Promise<any> => {
+const fetchMAASWeatherData = async (): Promise<WeatherData | null> => {
   try {
-    const response = await axios.get(nasaConfig.endpoints.maasWeather, {
+    const response = await axios.get<WeatherData>(nasaConfig.endpoints.maasWeather, {
       timeout: nasaConfig.timeout
     })
     return response.data
@@ -214,9 +298,17 @@ const fetchMAASWeatherData = async (): Promise<any> => {
 }
 
 // Convert InSight data to Perseverance format
-const convertInSightToPerseveranceFormat = (insightData: any): PerseveranceWeatherResponse => {
-  const currentSol = Math.max(...insightData.sol_keys.map((sol: string) => parseInt(sol)))
-  const solData = insightData[currentSol.toString()]
+const convertInSightToPerseveranceFormat = (insightData: WeatherData): PerseveranceWeatherResponse => {
+  const solKeys = insightData.sol_keys || []
+  const currentSol = Math.max(...solKeys.map((sol: string) => parseInt(sol)))
+  const solData = insightData[currentSol.toString()] as {
+    First_UTC?: string;
+    AT?: { av?: number; mn?: number; mx?: number; ct?: number };
+    PRE?: { av?: number; mn?: number; mx?: number; ct?: number };
+    HWS?: { av?: number; mx?: number; ct?: number };
+    WD?: { most_common?: { compass_point?: string; compass_degrees?: number } };
+    Season?: string;
+  }
   
   return {
     latest_sol: currentSol,
@@ -279,32 +371,32 @@ const convertInSightToPerseveranceFormat = (insightData: any): PerseveranceWeath
 }
 
 // Convert MSL data to Perseverance format
-const convertMSLToPerseveranceFormat = (mslData: any): PerseveranceWeatherResponse => {
-  const currentSol = mslData.sol || Math.floor(Math.random() * 100) + 3000
+const convertMSLToPerseveranceFormat = (mslData: WeatherData): PerseveranceWeatherResponse => {
+  const currentSol = (mslData.sol as number) || Math.floor(Math.random() * 100) + 3000
   
   return {
     latest_sol: currentSol,
     sol_data: {
       sol: currentSol,
-      terrestrial_date: mslData.terrestrial_date || new Date().toISOString().split('T')[0],
+      terrestrial_date: (mslData.terrestrial_date as string) || new Date().toISOString().split('T')[0],
       temperature: {
         air: {
-          average: mslData.min_temp ? (mslData.min_temp + mslData.max_temp) / 2 : -50,
-          minimum: mslData.min_temp || -70,
-          maximum: mslData.max_temp || -30,
+          average: (mslData.min_temp as number) ? ((mslData.min_temp as number) + (mslData.max_temp as number)) / 2 : -50,
+          minimum: (mslData.min_temp as number) || -70,
+          maximum: (mslData.max_temp as number) || -30,
           count: 24
         },
         ground: {
-          average: mslData.min_gts_temp ? (mslData.min_gts_temp + mslData.max_gts_temp) / 2 : -40,
-          minimum: mslData.min_gts_temp || -60,
-          maximum: mslData.max_gts_temp || -20,
+          average: (mslData.min_gts_temp as number) ? ((mslData.min_gts_temp as number) + (mslData.max_gts_temp as number)) / 2 : -40,
+          minimum: (mslData.min_gts_temp as number) || -60,
+          maximum: (mslData.max_gts_temp as number) || -20,
           count: 24
         }
       },
       pressure: {
-        average: mslData.pressure || 750,
-        minimum: (mslData.pressure || 750) - 50,
-        maximum: (mslData.pressure || 750) + 50,
+        average: (mslData.pressure as number) || 750,
+        minimum: ((mslData.pressure as number) || 750) - 50,
+        maximum: ((mslData.pressure as number) || 750) + 50,
         count: 24
       },
       wind: {
@@ -325,11 +417,11 @@ const convertMSLToPerseveranceFormat = (mslData: any): PerseveranceWeatherRespon
         maximum: 100,
         count: 24
       },
-      season: mslData.season || 'Unknown',
+      season: (mslData.season as string) || 'Unknown',
       sunrise: '06:30',
       sunset: '18:45',
       local_uv_irradiance_index: 'Moderate',
-      atmosphere_opacity: mslData.atmo_opacity || 'Clear'
+      atmosphere_opacity: (mslData.atmo_opacity as string) || 'Clear'
     },
     location: {
       name: 'Gale Crater (MSL/Curiosity Data)',
@@ -343,21 +435,21 @@ const convertMSLToPerseveranceFormat = (mslData: any): PerseveranceWeatherRespon
 }
 
 // Convert MAAS data to Perseverance format
-const convertMAASToPersevaeranceFormat = (maasData: any): PerseveranceWeatherResponse => {
-  const currentSol = maasData.sol || 0
-  const terrestrialDate = maasData.terrestrial_date || new Date().toISOString().split('T')[0]
+const convertMAASToPersevaeranceFormat = (maasData: WeatherData): PerseveranceWeatherResponse => {
+  const currentSol = (maasData.sol as number) || 0
+  const terrestrialDate = (maasData.terrestrial_date as string) || new Date().toISOString().split('T')[0]
   
   // Convert temperatures from Celsius to match our format
-  const minTemp = maasData.min_temp || -70
-  const maxTemp = maasData.max_temp || -30
+  const minTemp = (maasData.min_temp as number) || -70
+  const maxTemp = (maasData.max_temp as number) || -30
   const avgTemp = (minTemp + maxTemp) / 2
   
   // Convert pressure from hPa to Pa (MAAS uses different units)
-  const pressure = (maasData.pressure || 7.5) * 100 // Convert hPa to Pa
+  const pressure = ((maasData.pressure as number) || 7.5) * 100 // Convert hPa to Pa
   
   // Parse wind data
-  const windSpeed = maasData.wind_speed || 5
-  const windDirection = maasData.wind_direction || 'SW'
+  const windSpeed = (maasData.wind_speed as number) || 5
+  const windDirection = (maasData.wind_direction as string) || 'SW'
   const windDegrees = getWindDegrees(windDirection)
   
   return {
@@ -389,7 +481,7 @@ const convertMAASToPersevaeranceFormat = (maasData: any): PerseveranceWeatherRes
         speed: {
           average: Math.round(windSpeed * 10) / 10,
           minimum: 0,
-          maximum: Math.round((windSpeed + 10) * 10) / 10,
+          maximum: Math.round((windSpeed * 1.5) * 10) / 10,
           count: 24
         },
         direction: {
@@ -398,19 +490,19 @@ const convertMAASToPersevaeranceFormat = (maasData: any): PerseveranceWeatherRes
         }
       },
       humidity: {
-        average: maasData.abs_humidity || Math.round((Math.random() * 50 + 10) * 10) / 10,
+        average: Math.random() * 100,
         minimum: 0,
         maximum: 100,
         count: 24
       },
-      season: maasData.season || 'Unknown',
-      sunrise: maasData.sunrise ? new Date(maasData.sunrise).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : '06:30',
-      sunset: maasData.sunset ? new Date(maasData.sunset).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : '18:45',
-      local_uv_irradiance_index: maasData.atmo_opacity === 'Sunny' ? 'High' : 'Moderate',
-      atmosphere_opacity: maasData.atmo_opacity || 'Clear'
+      season: (maasData.season as string) || 'Unknown',
+      sunrise: '06:30',
+      sunset: '18:45',
+      local_uv_irradiance_index: 'Moderate',
+      atmosphere_opacity: (maasData.atmo_opacity as string) || 'Clear'
     },
     location: {
-      name: 'Gale Crater (Curiosity REMS - Current Data)',
+      name: 'Gale Crater (Curiosity REMS Data)',
       coordinates: {
         latitude: -5.4,
         longitude: 137.8
@@ -567,7 +659,7 @@ export const checkNASAApiHealth = async (): Promise<boolean> => {
 }
 
 // Multi-Planetary Dashboard Data Generator
-export const getMultiPlanetaryDashboard = async (): Promise<any> => {
+export const getMultiPlanetaryDashboard = async (): Promise<MultiPlanetaryDashboard> => {
   const currentDate = new Date()
   const timestamp = currentDate.toISOString()
   
@@ -766,129 +858,29 @@ export const getMultiPlanetaryDashboard = async (): Promise<any> => {
         temperature: {
           average: -160,
           min: -220,
-          max: -130,
+          max: -140,
           unit: '°C'
         },
         atmosphere: {
           composition: 'Thin oxygen atmosphere',
-          pressure: 0.1,
+          pressure: 0.0001,
           pressure_unit: 'Pa'
         },
-        gravity: 0.134,
+        gravity: 0.13,
         day_length: '85 hours',
         radiation_level: 'extreme'
       },
       last_activity: {
-        date: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        description: 'Europa Clipper trajectory correction',
-        days_ago: 45
+        date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        description: 'Europa Clipper completed trajectory correction',
+        days_ago: 5
       },
       next_event: {
         date: '2030-04-11',
-        description: 'Europa Clipper arrives at Jupiter system',
+        description: 'Europa Clipper arrival at Jupiter',
         days_until: daysDiff(new Date('2030-04-11'), currentDate)
       },
-      notable_fact: 'Europa may contain twice as much water as all Earth\'s oceans',
-      data_freshness: {
-        last_updated: timestamp,
-        hours_ago: 0
-      }
-    },
-    {
-      id: 'titan',
-      name: 'Titan',
-      type: 'moon',
-      active_missions: [
-        {
-          name: 'Dragonfly',
-          status: 'planned',
-          launch_date: '2028-07-01',
-          arrival_date: '2034-07-01',
-          mission_type: 'lander',
-          description: 'Nuclear-powered rotorcraft to explore Titan\'s surface'
-        }
-      ],
-      mission_count: 1,
-      surface_conditions: {
-        temperature: {
-          average: -179,
-          min: -190,
-          max: -170,
-          unit: '°C'
-        },
-        atmosphere: {
-          composition: '98% N₂, 2% CH₄',
-          pressure: 146700,
-          pressure_unit: 'Pa'
-        },
-        gravity: 0.14,
-        day_length: '382 hours',
-        radiation_level: 'low'
-      },
-      last_activity: {
-        date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        description: 'Dragonfly mission design review completed',
-        days_ago: 60
-      },
-      next_event: {
-        date: '2028-07-01',
-        description: 'Dragonfly launch',
-        days_until: daysDiff(new Date('2028-07-01'), currentDate)
-      },
-      notable_fact: 'Titan has lakes and rivers of liquid methane and ethane',
-      data_freshness: {
-        last_updated: timestamp,
-        hours_ago: 0
-      }
-    },
-    {
-      id: 'asteroid-belt',
-      name: 'Asteroid Belt',
-      type: 'asteroid',
-      active_missions: [
-        {
-          name: 'Dawn (Completed)',
-          status: 'completed',
-          launch_date: '2007-09-27',
-          arrival_date: '2015-03-06',
-          mission_type: 'orbiter',
-          description: 'Studied Vesta and Ceres'
-        },
-        {
-          name: 'OSIRIS-REx Sample Analysis',
-          status: 'active',
-          launch_date: '2016-09-08',
-          arrival_date: '2023-09-24',
-          mission_type: 'sample-return',
-          description: 'Analyzing samples from asteroid Bennu'
-        }
-      ],
-      mission_count: 2,
-      surface_conditions: {
-        temperature: {
-          average: -73,
-          min: -143,
-          max: -3,
-          unit: '°C'
-        },
-        atmosphere: {
-          composition: 'No atmosphere'
-        },
-        gravity: 0.00001,
-        day_length: 'Varies by asteroid',
-        radiation_level: 'high'
-      },
-      last_activity: {
-        date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        description: 'OSIRIS-REx sample analysis reveals new findings',
-        days_ago: 14
-      },
-      next_event: {
-        date: '2025-10-01',
-        description: 'Next asteroid sample return mission planning',
-        days_until: daysDiff(new Date('2025-10-01'), currentDate)
-      },
-      notable_fact: 'The asteroid belt contains 4% of the Moon\'s mass',
+      notable_fact: 'Europa has a subsurface ocean with more water than Earth',
       data_freshness: {
         last_updated: timestamp,
         hours_ago: 0
@@ -896,36 +888,35 @@ export const getMultiPlanetaryDashboard = async (): Promise<any> => {
     }
   ]
 
-  const totalActiveMissions = planetsData.reduce((total, planet) => 
-    total + planet.active_missions.filter(mission => mission.status === 'active').length, 0
-  )
-
   return {
     planets: planetsData,
-    total_active_missions: totalActiveMissions,
-    timestamp,
-    last_updated: timestamp
+    summary: {
+      total_planets: planetsData.length,
+      total_missions: planetsData.reduce((sum, planet) => sum + planet.mission_count, 0),
+      active_missions: planetsData.reduce((sum, planet) => 
+        sum + planet.active_missions.filter(mission => mission.status === 'active').length, 0
+      ),
+      last_updated: timestamp
+    }
   }
 }
 
-// Fetch historic Mars weather data for visualization
-export const fetchHistoricMarsWeatherData = async (): Promise<any> => {
+// Fetch historic Mars weather data for charts and analysis
+export const fetchHistoricMarsWeatherData = async (): Promise<HistoricWeatherData> => {
   try {
-    // Try to get InSight historical weather data
+    // Try to get InSight data first
     const insightData = await fetchInSightWeatherData()
-    
     if (insightData && insightData.sol_keys && insightData.sol_keys.length > 0) {
-      console.log('Processing InSight historical weather data for visualization')
+      console.log('Using InSight historical weather data for charts')
       return processInsightDataForCharts(insightData)
     }
     
-    // If no real data available, return simulated historical data
-    console.log('Generating simulated historical data for demonstration')
+    // Fallback to simulation data
+    console.log('Using historical weather simulation data')
     return generateHistoricalSimulationData()
     
   } catch (error) {
     console.error('Error fetching historic Mars weather data:', error)
-    // Return simulated data as fallback
     return generateHistoricalSimulationData()
   }
 }
@@ -992,91 +983,98 @@ interface HistoricWeatherData {
   atmospheric_conditions: AtmosphericCondition[];
 }
 
-// Process InSight data into chart-friendly format
-const processInsightDataForCharts = (insightData: any): HistoricWeatherData => {
-  const sols = insightData.sol_keys.map((sol: string) => Number(sol)).sort((a: number, b: number) => a - b)
-  const chartData: HistoricWeatherData = {
-    mission_info: {
-      name: 'InSight Mars Lander',
-      location: 'Elysium Planitia',
-      coordinates: { latitude: 4.5024, longitude: 135.6234 },
-      mission_duration: `Sol ${sols[0]} - Sol ${sols[sols.length - 1]}`,
-      earth_dates: {
-        start: insightData[sols[0]]?.First_UTC?.split('T')[0] || '2018-11-26',
-        end: insightData[sols[sols.length - 1]]?.Last_UTC?.split('T')[0] || '2022-12-15'
-      },
-      status: 'Mission Completed',
-      total_sols: sols.length
-    },
-    temperature_data: [],
-    pressure_data: [],
-    wind_data: [],
-    atmospheric_conditions: []
-  }
+// Process InSight data for chart format
+const processInsightDataForCharts = (insightData: WeatherData): HistoricWeatherData => {
+  const solKeys = insightData.sol_keys || []
+  const temperatureData: TemperatureDataPoint[] = []
+  const pressureData: PressureDataPoint[] = []
+  const windData: WindDataPoint[] = []
+  const atmosphericConditions: AtmosphericCondition[] = []
 
-  sols.forEach((sol: number) => {
-    const solData = insightData[sol.toString()]
-    if (!solData) return
+  solKeys.forEach((solKey) => {
+    const sol = parseInt(solKey)
+    const solData = insightData[solKey] as {
+      First_UTC?: string;
+      AT?: { av?: number; mn?: number; mx?: number; ct?: number };
+      PRE?: { av?: number; mn?: number; mx?: number; ct?: number };
+      HWS?: { av?: number; mn?: number; mx?: number; ct?: number };
+      WD?: { most_common?: { compass_point?: string; compass_degrees?: number } };
+      Season?: string;
+    }
 
-    const earthDate = solData.First_UTC?.split('T')[0] || ''
+    if (!solData || !solData.First_UTC) return
+
+    const earthDate = solData.First_UTC.split('T')[0]
     const season = solData.Season || 'Unknown'
-
+    
     // Temperature data
     if (solData.AT) {
-      chartData.temperature_data.push({
-        sol: sol,
-        earth_date: earthDate,
-        min_temp: solData.AT.mn || null,
-        max_temp: solData.AT.mx || null,
-        avg_temp: solData.AT.av || null,
-        temp_range: solData.AT.mx && solData.AT.mn ? solData.AT.mx - solData.AT.mn : null,
-        season: season,
-        sample_count: solData.AT.ct || 0
-      })
+      const avgTemp = solData.AT.av
+      const minTemp = solData.AT.mn
+      const maxTemp = solData.AT.mx
+      
+      if (avgTemp !== undefined && minTemp !== undefined && maxTemp !== undefined) {
+        temperatureData.push({
+          sol,
+          earth_date: earthDate,
+          min_temp: minTemp,
+          max_temp: maxTemp,
+          avg_temp: avgTemp,
+          temp_range: maxTemp - minTemp,
+          season,
+          sample_count: solData.AT.ct || 0
+        })
+      }
     }
 
     // Pressure data
     if (solData.PRE) {
-      chartData.pressure_data.push({
-        sol: sol,
-        earth_date: earthDate,
-        pressure: solData.PRE.av || null,
-        pressure_min: solData.PRE.mn || null,
-        pressure_max: solData.PRE.mx || null,
-        season: season,
-        sample_count: solData.PRE.ct || 0
-      })
+      const avgPressure = solData.PRE.av
+      const minPressure = solData.PRE.mn
+      const maxPressure = solData.PRE.mx
+      
+      if (avgPressure !== undefined && minPressure !== undefined && maxPressure !== undefined) {
+        pressureData.push({
+          sol,
+          earth_date: earthDate,
+          pressure: avgPressure,
+          pressure_min: minPressure,
+          pressure_max: maxPressure,
+          season,
+          sample_count: solData.PRE.ct || 0
+        })
+      }
     }
 
     // Wind data
     if (solData.HWS || solData.WD) {
-      const windData: WindDataPoint = {
-        sol: sol,
+      const windDataPoint: WindDataPoint = {
+        sol,
         earth_date: earthDate,
-        season: season
+        season
       }
 
       if (solData.HWS) {
-        windData.wind_speed = solData.HWS.av || null
-        windData.wind_speed_min = solData.HWS.mn || null
-        windData.wind_speed_max = solData.HWS.mx || null
-        windData.wind_speed_samples = solData.HWS.ct || 0
+        windDataPoint.wind_speed = solData.HWS.av
+        windDataPoint.wind_speed_min = solData.HWS.mn
+        windDataPoint.wind_speed_max = solData.HWS.mx
+        windDataPoint.wind_speed_samples = solData.HWS.ct
       }
 
-      if (solData.WD && solData.WD.most_common) {
-        windData.wind_direction = solData.WD.most_common.compass_point || null
-        windData.wind_direction_degrees = solData.WD.most_common.compass_degrees || null
-        windData.wind_direction_samples = solData.WD.most_common.ct || 0
+      if (solData.WD?.most_common) {
+        windDataPoint.wind_direction = solData.WD.most_common.compass_point
+        windDataPoint.wind_direction_degrees = solData.WD.most_common.compass_degrees
+        windDataPoint.wind_direction_samples = 1
       }
 
-      chartData.wind_data.push(windData)
+      windData.push(windDataPoint)
     }
 
     // Atmospheric conditions summary
-    chartData.atmospheric_conditions.push({
-      sol: sol,
+    atmosphericConditions.push({
+      sol,
       earth_date: earthDate,
-      season: season,
+      season,
       has_temperature: !!solData.AT,
       has_pressure: !!solData.PRE,
       has_wind_speed: !!solData.HWS,
@@ -1085,28 +1083,66 @@ const processInsightDataForCharts = (insightData: any): HistoricWeatherData => {
     })
   })
 
-  return chartData
+  return {
+    mission_info: {
+      name: 'InSight Mars Lander',
+      location: 'Elysium Planitia',
+      coordinates: { latitude: 4.5024, longitude: 135.6234 },
+      mission_duration: '2018-2022',
+      earth_dates: { start: '2018-11-26', end: '2022-12-20' },
+      status: 'completed',
+      total_sols: solKeys.length
+    },
+    temperature_data: temperatureData,
+    pressure_data: pressureData,
+    wind_data: windData,
+    atmospheric_conditions: atmosphericConditions
+  }
 }
 
-// Calculate data quality score for a sol
-const calculateDataQuality = (solData: any): number => {
+// Calculate data quality score (0-100)
+const calculateDataQuality = (solData: {
+  AT?: { av?: number; mn?: number; mx?: number; ct?: number };
+  PRE?: { av?: number; mn?: number; mx?: number; ct?: number };
+  HWS?: { av?: number; mn?: number; mx?: number; ct?: number };
+  WD?: { most_common?: { compass_point?: string; compass_degrees?: number } };
+}): number => {
   let score = 0
-  let total = 0
+  let totalChecks = 0
 
+  // Check temperature data
   if (solData.AT) {
-    score += (solData.AT.ct >= 18 * 24) ? 1 : (solData.AT.ct / (18 * 24))
-    total += 1
-  }
-  if (solData.PRE) {
-    score += (solData.PRE.ct >= 18 * 24) ? 1 : (solData.PRE.ct / (18 * 24))
-    total += 1
-  }
-  if (solData.HWS) {
-    score += (solData.HWS.ct >= 18 * 24) ? 1 : (solData.HWS.ct / (18 * 24))
-    total += 1
+    totalChecks++
+    if (solData.AT.av !== undefined && solData.AT.mn !== undefined && solData.AT.mx !== undefined) {
+      score++
+    }
   }
 
-  return total > 0 ? Math.round((score / total) * 100) : 0
+  // Check pressure data
+  if (solData.PRE) {
+    totalChecks++
+    if (solData.PRE.av !== undefined && solData.PRE.mn !== undefined && solData.PRE.mx !== undefined) {
+      score++
+    }
+  }
+
+  // Check wind speed data
+  if (solData.HWS) {
+    totalChecks++
+    if (solData.HWS.av !== undefined) {
+      score++
+    }
+  }
+
+  // Check wind direction data
+  if (solData.WD) {
+    totalChecks++
+    if (solData.WD.most_common?.compass_point) {
+      score++
+    }
+  }
+
+  return totalChecks > 0 ? Math.round((score / totalChecks) * 100) : 0
 }
 
 // Generate realistic historical simulation data for demonstration

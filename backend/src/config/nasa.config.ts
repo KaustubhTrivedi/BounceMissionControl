@@ -1,4 +1,20 @@
-module.exports = {
+interface NasaConfig {
+  apiKey: string;
+  baseUrl: string;
+  endpoints: {
+    apod: string;
+    marsRover: string;
+    marsRoverManifest: string;
+    insightWeather: string;
+    marsWeatherService: string;
+    maasWeather: string;
+  };
+  rovers: string[];
+  timeout: number;
+  retries: number;
+}
+
+const nasaConfig: NasaConfig = {
   apiKey: process.env.NASA_API_KEY || 'DEMO_KEY',
   baseUrl: 'https://api.nasa.gov',
   endpoints: {
@@ -13,4 +29,6 @@ module.exports = {
   rovers: ['curiosity', 'opportunity', 'spirit', 'perseverance'],
   timeout: 10000, // 10 seconds
   retries: 3
-} 
+}
+
+export default nasaConfig 

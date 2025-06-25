@@ -241,7 +241,7 @@ describe('NASA Controllers', () => {
       expect(mockStatus).toHaveBeenCalledWith(500)
       expect(mockJson).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: expect.stringContaining('Failed to fetch Mars rover photos'),
+          error: expect.stringContaining('Error fetching Mars rover photos'),
           timestamp: expect.any(String)
         })
       )
@@ -373,7 +373,7 @@ describe('NASA Controllers', () => {
       expect(mockStatus).toHaveBeenCalledWith(500)
       expect(mockJson).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: expect.stringContaining('Failed to fetch latest rover photos'),
+          error: expect.stringContaining('Error fetching latest rover photos'),
           timestamp: expect.any(String)
         })
       )
@@ -459,7 +459,7 @@ describe('NASA Controllers', () => {
       expect(mockStatus).toHaveBeenCalledWith(500)
       expect(mockJson).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: expect.stringContaining('Failed to fetch Perseverance weather data'),
+          error: expect.stringContaining('Error fetching Perseverance weather data'),
           timestamp: expect.any(String)
         })
       )

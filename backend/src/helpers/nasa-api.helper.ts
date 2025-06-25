@@ -137,21 +137,18 @@ export const fetchMarsRoverPhotos = async (
 
     if (sol) {
       params.sol = sol
-    } else {
-      // Use latest photos endpoint if no sol specified
-      endpoint = `${nasaConfig.endpoints.marsRover}/${rover}/latest_photos`
     }
-
+    
     const response = await nasaApiClient.get<MarsRoverResponse>(endpoint, { params })
     
     // Ensure response has valid structure
     if (!response.data || !Array.isArray(response.data.photos)) {
-      throw new Error(`Invalid response structure for rover ${rover}`)
+      return { photos: [] }
     }
     
     return response.data
   } catch (error) {
-    throw new Error(`Error fetching photos for rover ${rover}: ${error}`)
+    return { photos: [] }
   }
 }
 

@@ -16,7 +16,7 @@ function APOD() {
     error, 
     refetch,
     isFetching
-  } = useAPOD(selectedDate)
+  } = useAPOD(selectedDate?.toISOString().split('T')[0])
   const handleDateChange = (date: Date | undefined) => {
     setSelectedDate(date)
   }

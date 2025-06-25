@@ -1,4 +1,3 @@
-import React from 'react'
 import type { ReactElement } from 'react'
 import { render } from '@testing-library/react'
 import type { RenderOptions } from '@testing-library/react'
@@ -7,7 +6,7 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { routeTree } from '../routeTree.gen'
 
 // Create a custom render method that includes providers
-const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
+const AllTheProviders = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {

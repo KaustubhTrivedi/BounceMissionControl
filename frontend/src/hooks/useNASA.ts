@@ -3,132 +3,93 @@
  * Custom hooks for fetching NASA data using React Query
  */
 
-import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
-import { 
-  nasaApi, 
-  formatDateForNASA, 
-  type APODData, 
-  type MarsRoverResponse, 
-  type RoverManifest, 
-  type MostActiveRoverResponse,
-  type RoverName,
-  type MultiPlanetDashboardResponse,
-  type HistoricMarsWeatherResponse
-} from '@/services/nasa'
+import { useQuery } from '@tanstack/react-query'
+import { nasaApi, type RoverName } from '@/services/nasa'
 
 // Query Keys
-export const nasaQueryKeys = {
-  apod: (date?: string) => ['nasa', 'apod', date] as const,
-  marsRover: (params: Record<string, unknown>) => ['nasa', 'mars-rover', params] as const,
-  marsRoverByRover: (rover: string, params: Record<string, unknown>) => ['nasa', 'mars-rover', rover, params] as const,
-  marsRoverLatest: (rover?: string) => ['nasa', 'mars-rover', 'latest', rover] as const,
-  roverManifest: (rover: string) => ['nasa', 'rover-manifest', rover] as const,
-  mostActiveRover: () => ['nasa', 'most-active-rover'] as const,
-  latestRoverPhotos: (params: Record<string, unknown>) => ['nasa', 'latest-rover-photos', params] as const,
-  multiPlanetaryDashboard: () => ['nasa', 'multi-planetary-dashboard'] as const,
-  historicMarsWeather: () => ['nasa', 'historic-mars-weather'] as const,
-}
+const QUERY_KEYS = {
+  apod: 'apod',
+  marsRoverPhotos: 'marsRoverPhotos',
+  marsRoverPhotosByRover: 'marsRoverPhotosByRover',
+  latestMarsRoverPhotos: 'latestMarsRoverPhotos',
+  roverManifest: 'roverManifest',
+  mostActiveRover: 'mostActiveRover',
+  perseveranceWeather: 'perseveranceWeather',
+  marsWeather: 'marsWeather',
+  multiPlanetaryDashboard: 'multiPlanetaryDashboard',
+  historicMarsWeather: 'historicMarsWeather',
+} as const
 
 // APOD Hook
-export const useAPOD = (
-  date?: Date,
-  options?: Omit<UseQueryOptions<APODData>, 'queryKey' | 'queryFn'>
-) => {
-  const dateString = date ? formatDateForNASA(date) : undefined
-  
+export const useAPOD = (date?: string) => {
   return useQuery({
-    queryKey: nasaQueryKeys.apod(dateString),
-    queryFn: () => nasaApi.getAPOD(dateString),
-    staleTime: 1000 * 60 * 30, // 30 minutes
-    gcTime: 1000 * 60 * 60 * 24, // 24 hours
-    ...options,
+    queryKey: [QUERY_KEYS.apod, date],
+    queryFn: () => nasaApi.getAPOD(date),
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60 * 24,
   })
 }
 
-// Mars Rover Photos Hook (with optional parameters)
-export const useMarsRoverPhotos = (
-  params: {
-    rover?: string
-    sol?: number
-    camera?: string
-    page?: number
-  } = {},
-  options?: Omit<UseQueryOptions<MarsRoverResponse>, 'queryKey' | 'queryFn'>
-) => {
-  // Only enable the query if we have some parameters or want default behavior
-  const enabled = options?.enabled ?? true
-  
+// Mars Rover Photos Hook
+export const useMarsRoverPhotos = (params: {
+  rover?: string
+  sol?: number
+  camera?: string
+  page?: number
+} = {}) => {
   return useQuery({
-    queryKey: nasaQueryKeys.marsRover(params),
+    queryKey: [QUERY_KEYS.marsRoverPhotos, params],
     queryFn: () => nasaApi.getMarsRoverPhotos(params),
-    enabled,
-    staleTime: 1000 * 60 * 15, // 15 minutes
-    gcTime: 1000 * 60 * 60 * 2, // 2 hours
-    ...options,
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 60 * 2,
   })
 }
 
 // Mars Rover Photos by Specific Rover Hook
-export const useMarsRoverPhotosByRover = (
-  rover: RoverName,
-  params: {
-    sol?: number
-    camera?: string
-    page?: number
-  } = {},
-  options?: Omit<UseQueryOptions<MarsRoverResponse>, 'queryKey' | 'queryFn'>
-) => {
+export const useMarsRoverPhotosByRover = (rover: RoverName, params: {
+  sol?: number
+  camera?: string
+  page?: number
+} = {}) => {
   return useQuery({
-    queryKey: nasaQueryKeys.marsRoverByRover(rover, params),
+    queryKey: [QUERY_KEYS.marsRoverPhotosByRover, rover, params],
     queryFn: () => nasaApi.getMarsRoverPhotosByRover(rover, params),
-    staleTime: 1000 * 60 * 15, // 15 minutes
-    gcTime: 1000 * 60 * 60 * 2, // 2 hours
-    ...options,
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 60 * 2,
   })
 }
 
-// Latest Mars Rover Photos Hook (uses most active rover)
-export const useLatestMarsRoverPhotos = (
-  params: {
-    sol?: number
-    camera?: string
-    page?: number
-  } = {},
-  options?: Omit<UseQueryOptions<MarsRoverResponse>, 'queryKey' | 'queryFn'>
-) => {
+// Latest Mars Rover Photos Hook
+export const useLatestMarsRoverPhotos = (params: {
+  sol?: number
+  camera?: string
+  page?: number
+} = {}) => {
   return useQuery({
-    queryKey: nasaQueryKeys.latestRoverPhotos(params),
+    queryKey: [QUERY_KEYS.latestMarsRoverPhotos, params],
     queryFn: () => nasaApi.getLatestRoverPhotos(params),
-    staleTime: 1000 * 60 * 10, // 10 minutes (more frequent updates for latest data)
-    gcTime: 1000 * 60 * 60 * 2, // 2 hours
-    ...options,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 60 * 2,
   })
 }
 
 // Rover Manifest Hook
-export const useRoverManifest = (
-  rover: RoverName,
-  options?: Omit<UseQueryOptions<RoverManifest>, 'queryKey' | 'queryFn'>
-) => {
+export const useRoverManifest = (rover: RoverName) => {
   return useQuery({
-    queryKey: nasaQueryKeys.roverManifest(rover),
+    queryKey: [QUERY_KEYS.roverManifest, rover],
     queryFn: () => nasaApi.getRoverManifest(rover),
-    staleTime: 1000 * 60 * 60, // 1 hour (manifests don't change often)
-    gcTime: 1000 * 60 * 60 * 24, // 24 hours
-    ...options,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
   })
 }
 
 // Most Active Rover Hook
-export const useMostActiveRover = (
-  options?: Omit<UseQueryOptions<MostActiveRoverResponse>, 'queryKey' | 'queryFn'>
-) => {
+export const useMostActiveRover = () => {
   return useQuery({
-    queryKey: nasaQueryKeys.mostActiveRover(),
+    queryKey: [QUERY_KEYS.mostActiveRover],
     queryFn: () => nasaApi.getMostActiveRover(),
-    staleTime: 1000 * 60 * 30, // 30 minutes
-    gcTime: 1000 * 60 * 60 * 12, // 12 hours
-    ...options,
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60 * 12,
   })
 }
 
@@ -138,22 +99,26 @@ export const useMostActiveRoverWithPhotos = (params: {
   camera?: string
   page?: number
 } = {}) => {
-  return useQuery({
-    queryKey: ['most-active-rover-photos', params],
-    queryFn: () => nasaApi.getLatestRoverPhotos(params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  })
+  const { data: mostActiveRover, ...roverQuery } = useMostActiveRover()
+  const { data: photos, ...photosQuery } = useLatestMarsRoverPhotos(params)
+
+  return {
+    data: { rover: mostActiveRover, photos },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    ...roverQuery,
+    ...photosQuery,
+  }
 }
 
 // Hook to get Perseverance MEDA weather data
 export const usePerseveranceWeather = () => {
   return useQuery({
-    queryKey: ['perseverance-weather'],
+    queryKey: [QUERY_KEYS.perseveranceWeather],
     queryFn: () => nasaApi.getPerseveranceWeather(),
-    staleTime: 30 * 60 * 1000, // 30 minutes - weather data doesn't change frequently
-    gcTime: 60 * 60 * 1000, // 1 hour
-    retry: 2, // Retry twice in case of temporary failures
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: 2,
   })
 }
 
@@ -173,28 +138,22 @@ export const useLatestPerseveranceWeather = () => {
 }
 
 // Hook to get multi-planetary dashboard data
-export const useMultiPlanetaryDashboard = (
-  options?: Omit<UseQueryOptions<MultiPlanetDashboardResponse>, 'queryKey' | 'queryFn'>
-) => {
+export const useMultiPlanetaryDashboard = () => {
   return useQuery({
-    queryKey: nasaQueryKeys.multiPlanetaryDashboard(),
+    queryKey: [QUERY_KEYS.multiPlanetaryDashboard],
     queryFn: () => nasaApi.getMultiPlanetaryDashboard(),
-    staleTime: 1000 * 60 * 15, // 15 minutes
-    gcTime: 1000 * 60 * 60 * 2, // 2 hours
-    ...options,
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 60 * 2,
   })
 }
 
-// Hook to get historic Mars weather data (InSight legacy data)
-export const useHistoricMarsWeather = (
-  options?: Omit<UseQueryOptions<HistoricMarsWeatherResponse>, 'queryKey' | 'queryFn'>
-) => {
+// Hook to get historic Mars weather data
+export const useHistoricMarsWeather = () => {
   return useQuery({
-    queryKey: nasaQueryKeys.historicMarsWeather(),
+    queryKey: [QUERY_KEYS.historicMarsWeather],
     queryFn: () => nasaApi.getHistoricMarsWeather(),
-    staleTime: 1000 * 60 * 60, // 1 hour (historic data doesn't change)
-    gcTime: 1000 * 60 * 60 * 24, // 24 hours
-    ...options,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
   })
 }
 

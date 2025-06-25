@@ -30,16 +30,7 @@ app.use(notFoundHandler)
 
 // Start server
 app.listen(appConfig.port, () => {
-  console.log(`🚀 Bounce Mission Control Backend listening on port ${appConfig.port}`)
-  console.log(`Environment: ${appConfig.environment}`)
-  console.log(`NASA API Key: ${process.env.NASA_API_KEY === 'DEMO_KEY' ? 'Using DEMO_KEY' : 'Configured'}`)
-  
-  if (appConfig.environment === 'development') {
-    console.log(`Available endpoints:`)
-    console.log(`  GET http://localhost:${appConfig.port}/api/`)
-    console.log(`  GET http://localhost:${appConfig.port}/api/apod?date=YYYY-MM-DD`)
-    console.log(`  GET http://localhost:${appConfig.port}/api/mars-photos?sol=NUMBER`)
-  }
+  // Server started successfully
 })
 
 export default app

@@ -36,7 +36,7 @@ interface APIParams {
 }
 
 // Interface for rover manifest
-interface RoverManifest {
+interface LocalRoverManifest {
   photo_manifest: {
     name: string;
     landing_date: string;
@@ -155,9 +155,9 @@ export const fetchMarsRoverPhotos = async (
 // Fetch rover manifest (contains mission info and latest sol)
 export const fetchRoverManifest = async (
   rover: string
-): Promise<RoverManifest> => {
+): Promise<LocalRoverManifest> => {
   const endpoint = `${nasaConfig.endpoints.marsRoverManifest}/${rover}`
-  const response = await nasaApiClient.get<RoverManifest>(endpoint)
+  const response = await nasaApiClient.get<LocalRoverManifest>(endpoint)
   return response.data
 }
 
@@ -187,6 +187,7 @@ export const getMostActiveRover = async (): Promise<string> => {
           maxSol: number
           maxDate: string
           status: string
+          name: string
         }> => result.status === 'fulfilled'
       )
       .map(result => result.value)
@@ -1172,21 +1173,7 @@ const processInsightDataForCharts = (
     })
   })
 
-  return {
-    mission_info: {
-      name: 'InSight Mars Lander',
-      location: 'Elysium Planitia',
-      coordinates: { latitude: 4.5024, longitude: 135.6234 },
-      mission_duration: '2018-2022',
-      earth_dates: { start: '2018-11-26', end: '2022-12-20' },
-      status: 'completed',
-      total_sols: solKeys.length
-    },
-    temperature_data: temperatureData,
-    pressure_data: pressureData,
-    wind_data: windData,
-    atmospheric_conditions: atmosphericConditions
-  }
+  return chartData
 }
 
 const calculateDataQuality = (solData: InSightSolData): number => {

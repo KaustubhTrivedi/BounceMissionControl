@@ -8,10 +8,6 @@ import appConfig from './config/app.config'
 // Load environment variables
 dotenv.config()
 
-// Import configurations
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const appConfig = require('./config/app.config')
-
 // Create Express application
 const app = express()
 

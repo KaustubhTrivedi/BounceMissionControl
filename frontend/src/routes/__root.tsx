@@ -45,6 +45,13 @@ function RootComponent() {
                 Mars Data
               </Link>
               <Link 
+                to="/mars-weather" 
+                className="text-gray-300 hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-white/10"
+                activeProps={{ className: "text-[#FF7F50] bg-[#FF7F50]/20 px-4 py-2 rounded-lg text-sm font-medium" }}
+              >
+                Mars Weather
+              </Link>
+              <Link 
                 to="/" 
                 className="text-gray-300 hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-white/10"
                 activeProps={{ className: "text-[#66FCF1] bg-[#66FCF1]/20 px-4 py-2 rounded-lg text-sm font-medium" }}

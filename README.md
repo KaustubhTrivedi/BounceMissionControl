@@ -222,4 +222,3 @@ This project is licensed under the MIT License.
 ## 🙏 Acknowledgments
 
 - Powered by NASA Open APIs.
-- Developed as part of the "bounce Insights" coding challenge.
